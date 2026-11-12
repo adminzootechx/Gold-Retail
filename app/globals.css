@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+/* Design tokens. Light only. Values follow the Jewelrex (gold ERP) reference build. */
+:root {
+  --background: #f8f7f4;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --muted: #f1f5f9;
+  --muted-foreground: #5e6b80;
+  --primary: #1e3a8a;
+  --gold: #b8860b;
+  --gold-fg: #1a1405;
+  --gold-light: #fef9e7;
+  --gold-mid: #f0c040;
+  --success: #16a34a;
+  --success-bg: #f0fdf4;
+  --warning: #b45309;
+  --warning-bg: #fffbeb;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --info: #0369a1;
+  --info-bg: #f0f9ff;
+  --radius: 12px;
+  --sidebar-width: 240px;
+  --sidebar-collapsed: 64px;
+  --topbar-height: 64px;
+  color-scheme: light;
+}
+
+@theme inline {
+  --font-sans: var(--font-jakarta), system-ui, sans-serif;
+  --font-display: var(--font-schibsted), var(--font-jakarta), system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-gold: var(--gold);
+  --color-gold-fg: var(--gold-fg);
+  --color-gold-light: var(--gold-light);
+  --color-gold-mid: var(--gold-mid);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+}
+
+/* Same type ramp as the gold ERP: headings a little smaller than Tailwind's. */
+@theme {
+  --text-xs: 0.71875rem;
+  --text-sm: 0.84375rem;
+  --text-base: 0.90625rem;
+  --text-lg: 1rem;
+  --text-xl: 1.0625rem;
+  --text-2xl: 1.28125rem;
+  --text-3xl: 1.59375rem;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+h1, h2, h3 { text-wrap: balance;
+  font-family: var(--font-schibsted), var(--font-jakarta), system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+p, li, dd { text-wrap: pretty; }
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+input, select, button { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+/* Printing: only the element marked .print-area is printed (tag labels, invoices, slips). */
+@media print {
+  @page { margin: 8mm; }
+  body * { visibility: hidden !important; }
+  .print-area, .print-area * { visibility: visible !important; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+  .app-shell { display: block !important; height: auto !important; }
+  .app-main { overflow: visible !important; height: auto !important; }
+  .no-print { display: none !important; }
+}
