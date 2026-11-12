@@ -1,0 +1,198 @@
+// Builds the twelve analytics dashboards from the stored data. Pure, no React.
+import { g, inr, jcCalc } from "../lib/calc";
+import { THIS_MONTH, ageBucket, customerTotals, lakh, monthKey, monthLabel, plural, prevMonthKey, receivables, revenueToDay, TODAY } from "../lib/stats";
+import { AP, STORES, VENDORS } from "../lib/mock";
+import { STORE_TARGET } from "../lib/home";
+import type { Channel, Invoice, State } from "../lib/data";
+
+export type Row = Record<string, string | number>;
+export interface Chart {
+  title: string; note?: string;
+  kind: "bar" | "hbar" | "line" | "lines" | "stack" | "donut";
+  data: Row[]; keys?: string[]; unit?: string;
+}
+export interface Dash {
+  id: string; title: string; about: string; sample?: boolean;
+  kpis: [string, string, string?][];
+  charts: Chart[];
+  insights: string[];
+  table: { title: string; head: string[]; rows: (string | number)[][]; num?: number[] };
+}
+export interface Filter { months: number; channel: Channel | "All" }
+
+const days = (tag: string) => 5 + ([...tag].reduce((a, c) => a + c.charCodeAt(0), 0) % 140);
+const L = (n: number) => Math.round(n / 10000) / 10;
+const pct = (a: number, b: number) => Math.round((a / Math.max(1, b)) * 100);
+const sum = <T,>(a: T[], f: (x: T) => number) => a.reduce((x, r) => x + f(r), 0);
+const due = (v: Invoice) => v.amount - v.paid;
+const top = (m: Record<string, number>) => Object.entries(m).sort((a, b) => b[1] - a[1])[0];
+const tally = <T,>(a: T[], f: (x: T) => string, w: (x: T) => number = () => 1) => a.reduce<Record<string, number>>((m, x) => ({ ...m, [f(x)]: (m[f(x)] ?? 0) + w(x) }), {});
+const rows = (m: Record<string, number>, unit = 1): Row[] => Object.entries(m).map(([name, v]) => ({ name, v: Math.round(v * unit) / unit }));
+const delta = (now: number, before: number) => (before ? `${now >= before ? "up" : "down"} ${Math.abs(pct(now - before, before))}% on the same days last month` : "no earlier month");
+
+/** The months a filter covers, oldest first. */
+export function monthsIn(n: number) {
+  const out: string[] = [];
+  for (let k = THIS_MONTH, i = 0; i < n; i++, k = prevMonthKey(k)) out.unshift(k);
+  return out;
+}
+
+export function build(s: State, f: Filter): Dash[] {
+  const span = monthsIn(f.months);
+  const all = s.invoices;
+  const inv = all.filter((v) => span.includes(monthKey(v.date)) && (f.channel === "All" || v.channel === f.channel));
+  const monthly = (list: Invoice[], pick: (v: Invoice) => number = (v) => v.amount) => span.map((k) => ({ key: k, name: monthLabel(k), v: sum(list.filter((v) => monthKey(v.date) === k), pick) }));
+  const cur = sum(all.filter((v) => monthKey(v.date) === THIS_MONTH), (v) => v.amount);
+  const prev = revenueToDay(all, prevMonthKey(THIS_MONTH), +TODAY.slice(8));
+  const nowInv = inv.filter((v) => monthKey(v.date) === THIS_MONTH);
+  const total = sum(inv, (v) => v.amount);
+  const channels = ["Retail", "Online", "HNI", "Corporate"] as const;
+  const byChannel = tally(inv, (v) => v.channel, (v) => v.amount);
+
+  const live = s.items.filter((i) => i.status !== "Sold");
+  const stock = s.items.filter((i) => i.status === "InStock");
+  const fine = sum(s.lots, (l) => l.fine);
+  const open = s.jcs.filter((j) => j.state !== "Closed");
+  const unrec = sum(s.jcs.filter((j) => j.state === "Received" && !j.approved), (j) => jcCalc(j).unrec);
+  const owed = receivables(all);
+  const owedTotal = sum(owed, due);
+  const apTotal = sum(AP, (r) => r.due);
+  const cust = customerTotals(inv, s.customers).sort((a, b) => b.spend - a.spend);
+  const sold = inv.filter((v) => v.sku);
+  const aged = stock.filter((i) => days(i.tag) > 90);
+  const storeRev = (n: string, list = nowInv) => sum(list.filter((v) => v.store === n), (v) => v.amount);
+  const ageOwed = (b: string) => sum(owed.filter((v) => ageBucket(v.date) === b), due);
+  const best = top(byChannel);
+  const topSku = top(tally(sold, (v) => v.sku!));
+  const seen = (name: string) => s.customers.find((c) => c.id === name)?.name ?? "Walk-in";
+
+  return [
+    { id: "inventory", title: "Inventory", about: "What is on the books, where it sits and what state it is in.",
+      kpis: [["Pieces on the books", String(live.length), `${plural(stock.length, "piece")} ready to sell`], ["Stock value", inr(sum(live, (i) => i.price))], ["In stock", String(stock.length)], ["In transit", String(s.items.filter((i) => i.status === "InTransit").length), "between locations"]],
+      charts: [
+        { title: "Pieces by location", kind: "hbar", data: rows(tally(live, (i) => i.loc)) },
+        { title: "Pieces by status", kind: "donut", data: rows(tally(live, (i) => i.status)) },
+        { title: "Stock value by SKU (lakh)", kind: "bar", data: rows(tally(live, (i) => i.sku.slice(3), (i) => i.price / 100000), 10) },
+      ],
+      insights: [
+        `${top(tally(live, (i) => i.loc))?.[0] ?? "No location"} holds the most pieces (${top(tally(live, (i) => i.loc))?.[1] ?? 0} of ${live.length}).`,
+        `${plural(s.items.filter((i) => i.status === "InTransit").length, "piece")} in transit. Receive them to make them sellable.`,
+        `${plural(live.filter((i) => i.status !== "InStock" && i.status !== "InTransit").length, "piece")} held, reserved or out on memo, so not available to sell.`,
+      ],
+      table: { title: "Every piece on the books", head: ["Tag", "SKU", "Variant", "Location", "Status", "Net wt", "Price"], num: [5, 6], rows: live.map((i) => [i.tag, i.sku, i.variant, i.loc, i.status, g(i.net), inr(i.price)]) } },
+
+    { id: "raw", title: "Raw material", about: "Fine gold by lot, and how much of it is committed to work.",
+      kpis: [["Fine gold on hand", g(fine)], ["Metal lots", String(s.lots.length)], ["Issued on open cards", g(sum(open, (j) => j.issued)), `${plural(open.length, "open card")}`], ["Stones issued", (sum(open, (j) => j.stI) / 100).toFixed(2) + " ct"]],
+      charts: [
+        { title: "Fine gold by lot (g)", kind: "bar", data: s.lots.map((l) => ({ name: l.id, v: Math.round(l.fine / 1000) })) },
+        { title: "Share of gold by lot", kind: "donut", data: s.lots.map((l) => ({ name: l.id, v: Math.round(l.fine / 1000) })) },
+        { title: "Gold issued to each open card (g)", kind: "hbar", data: open.map((j) => ({ name: j.id, v: Math.round(j.issued / 1000) })) },
+      ],
+      insights: [
+        `Fine gold on hand is ${g(fine)} across ${plural(s.lots.length, "lot")}.`,
+        `${g(sum(open, (j) => j.issued))} is out on ${plural(open.length, "open job card")}.`,
+        "Gold is counted in fine milligrams, so purity never has to be recalculated.",
+      ],
+      table: { title: "Metal lots", head: ["Lot", "Fine gold", "Share"], num: [2], rows: s.lots.map((l) => [l.id, g(l.fine), pct(l.fine, fine) + "%"]) } },
+
+    { id: "production", title: "Production", about: "Job cards, who holds the work and where it is stuck.",
+      kpis: [["Open job cards", String(open.length)], ["At vendor", String(s.jcs.filter((j) => j.state === "At vendor").length)], ["Received at HO", String(s.jcs.filter((j) => j.state === "Received").length)], ["Pieces in work", String(sum(open, (j) => j.qty))]],
+      charts: [
+        { title: "Pieces in work by vendor", kind: "bar", data: VENDORS.map((v) => ({ name: v.name.split(" ")[0], v: sum(open.filter((j) => j.vendor === v.name), (j) => j.qty) })) },
+        { title: "Job cards by state and vendor", kind: "stack", keys: ["At vendor", "Received", "Closed"], data: VENDORS.map((v) => ({ name: v.name.split(" ")[0], "At vendor": s.jcs.filter((j) => j.vendor === v.name && j.state === "At vendor").length, Received: s.jcs.filter((j) => j.vendor === v.name && j.state === "Received").length, Closed: s.jcs.filter((j) => j.vendor === v.name && j.state === "Closed").length })) },
+      ],
+      insights: [
+        `${plural(s.jcs.filter((j) => j.state === "Received" && !j.approved && jcCalc(j).unrec > 0).length, "received card")} does not reconcile and cannot close.`,
+        `${top(tally(open, (j) => j.vendor, (j) => j.qty))?.[0] ?? "No vendor"} holds the most open pieces.`,
+        `${g(unrec)} of fine gold is unaccounted for on received cards.`,
+      ],
+      table: { title: "Job cards", head: ["Card", "Vendor", "SKU", "Pieces", "Issued", "Unreconciled", "State"], num: [3, 4, 5], rows: s.jcs.map((j) => [j.id, j.vendor, j.sku, j.qty, g(j.issued), j.state === "Received" ? g(jcCalc(j).unrec) : "-", j.state]) } },
+
+    { id: "manufacturing", title: "Manufacturing", sample: true, about: "How long each stage takes. Cycle times here are sample figures.",
+      kpis: [["Cycle time", "13 days", "issue to HO receipt"], ["QC fail rate", "4%", "last 30 days"], ["Rework pieces", "2"], ["Unreconciled gold", g(unrec)]],
+      charts: [
+        { title: "Cycle time by month (days)", kind: "line", data: span.map((k, i) => ({ name: monthLabel(k), v: [17, 16, 15, 15, 14, 13][i + 6 - span.length] ?? 13 })) },
+        { title: "Where the days go", kind: "donut", data: [{ name: "Casting", v: 3 }, { name: "Setting", v: 5 }, { name: "Finishing", v: 2 }, { name: "QC and hallmark", v: 3 }] },
+      ],
+      insights: ["Stone setting is the longest stage at 5 days.", "Cycle time has fallen from 17 to 13 days in six months.", `${g(unrec)} of gold is still unreconciled, and that is real data, not a sample.`],
+      table: { title: "Stage times", head: ["Stage", "Average days", "Target", "Gap"], num: [1, 2, 3], rows: [["Casting", 3, 3, 0], ["Setting", 5, 4, 1], ["Finishing", 2, 2, 0], ["QC and hallmark", 3, 3, 0]] } },
+
+    { id: "sales", title: "Sales", about: "Revenue, channel mix and what a typical invoice looks like.",
+      kpis: [["Revenue this month", lakh(sum(nowInv, (v) => v.amount)), delta(cur, prev)], ["Invoices", String(inv.length), `in the last ${plural(f.months, "month")}`], ["Average invoice", inr(total / Math.max(1, inv.length))], ["Online share", pct(byChannel.Online ?? 0, total) + "%"]],
+      charts: [
+        { title: "Revenue by month (lakh)", kind: "line", data: monthly(inv).map((r) => ({ name: r.name, v: L(r.v) })) },
+        { title: "Revenue by channel and month (lakh)", kind: "stack", keys: [...channels], data: span.map((k) => ({ name: monthLabel(k), ...Object.fromEntries(channels.map((c) => [c, L(sum(inv.filter((v) => v.channel === c && monthKey(v.date) === k), (v) => v.amount))])) })) },
+        { title: "Channel share of revenue", kind: "donut", data: rows(byChannel) },
+      ],
+      insights: [
+        best ? `${best[0]} brings the most revenue: ${lakh(best[1])}, ${pct(best[1], total)}% of the period.` : "No sales in this period.",
+        `This month is ${delta(cur, prev)}.`,
+        `Biggest single invoice: ${inr(Math.max(0, ...inv.map((v) => v.amount)))}.`,
+      ],
+      table: { title: "Largest invoices", head: ["Invoice", "Date", "Customer", "Channel", "Store", "Amount", "Paid"], num: [5, 6], rows: [...inv].sort((a, b) => b.amount - a.amount).slice(0, 15).map((v) => [v.id, v.date, seen(v.custId), v.channel, v.store, inr(v.amount), inr(v.paid)]) } },
+
+    { id: "finance", title: "Finance", about: "Billed against collected, and what is still owed either way.",
+      kpis: [["Collected this month", lakh(sum(nowInv, (v) => v.paid))], ["Collection rate", pct(sum(inv, (v) => v.paid), total) + "%", "of billed in the period"], ["Gold rate 24K", inr(13250), "per gram"], ["Net receivable", inr(owedTotal - apTotal), "owed to us less we owe"]],
+      charts: [
+        { title: "Billed against collected (lakh)", kind: "lines", keys: ["Billed", "Collected"], data: span.map((k) => ({ name: monthLabel(k), Billed: L(sum(inv.filter((v) => monthKey(v.date) === k), (v) => v.amount)), Collected: L(sum(inv.filter((v) => monthKey(v.date) === k), (v) => v.paid)) })) },
+        { title: "Receivable against payable (lakh)", kind: "bar", data: [{ name: "Receivable", v: L(owedTotal) }, { name: "Payable", v: L(apTotal) }] },
+      ],
+      insights: [`We are owed ${inr(owedTotal)} and owe ${inr(apTotal)}.`, `${pct(sum(inv, (v) => v.paid), total)}% of what we billed in this period has been collected.`, "Margin, tax and ledger postings are not built yet, so no profit figure is shown."],
+      table: { title: "Unpaid invoices", head: ["Invoice", "Customer", "Date", "Age", "Due"], num: [4], rows: owed.map((v) => [v.id, seen(v.custId), v.date, ageBucket(v.date), inr(due(v))]) } },
+
+    { id: "ledgers", title: "Receivables and payables", sample: true, about: "Money in and out by age. Payables are sample figures.",
+      kpis: [["Receivable", inr(owedTotal), plural(owed.length, "unpaid invoice")], ["Payable", inr(apTotal), "sample"], ["Receivable over 60 days", inr(ageOwed("61-90+"))], ["Payable due this week", inr(sum(AP.filter((r) => r.age === "0-30"), (r) => r.due))]],
+      charts: [
+        { title: "Receivable and payable by age (thousand)", kind: "stack", keys: ["Receivable", "Payable"], data: ["0-30", "31-60", "61-90+"].map((b) => ({ name: b, Receivable: Math.round(ageOwed(b) / 1000), Payable: Math.round(sum(AP.filter((r) => r.age === b), (r) => r.due) / 1000) })) },
+        { title: "Who owes us (thousand)", kind: "hbar", data: rows(tally(owed, (v) => seen(v.custId), (v) => due(v) / 1000)) },
+      ],
+      insights: [ageOwed("61-90+") ? `${inr(ageOwed("61-90+"))} has been owed for over 60 days. Call it in first.` : "Nothing has been owed for more than 60 days.", `${AP.length} supplier bills are open.`, `We owe ${inr(sum(AP.filter((r) => r.age === "61-90+"), (r) => r.due))} on bills past 60 days.`],
+      table: { title: "Supplier bills", head: ["Party", "Reference", "Age", "Due"], num: [3], rows: AP.map((r) => [r.party, r.note, r.age, inr(r.due)]) } },
+
+    { id: "customer", title: "Customer", about: "Who buys, how often, and who is behind on paying.",
+      kpis: [["Customers", String(s.customers.length)], ["Repeat share", pct(cust.filter((c) => c.orders >= 2).length, cust.length) + "%", "bought twice or more"], ["Top spender", inr(cust[0]?.spend ?? 0), cust[0]?.name], ["After-sales cases", String(s.repairs.length + s.approvals.filter((a) => a.type === "Refund" || a.type === "Exchange valuation").length)]],
+      charts: [
+        { title: "Spend by customer (lakh)", kind: "hbar", data: cust.slice(0, 8).map((c) => ({ name: c.name.split(" ").slice(0, 2).join(" "), v: L(c.spend) })) },
+        { title: "Spend by segment", kind: "donut", data: rows(tally(cust, (c) => c.segment, (c) => c.spend)) },
+      ],
+      insights: [`${cust[0]?.name ?? "Nobody"} is the top customer with ${inr(cust[0]?.spend ?? 0)}.`, `${plural(cust.filter((c) => c.due > 0).length, "customer")} still owe us money.`, `${top(tally(cust, (c) => c.segment, (c) => c.spend))?.[0] ?? "No"} is the biggest segment by spend.`],
+      table: { title: "All customers", head: ["Customer", "Segment", "City", "Invoices", "Spend", "Owes"], num: [3, 4, 5], rows: cust.map((c) => [c.name, c.segment, c.city, c.orders, inr(c.spend), inr(c.due)]) } },
+
+    { id: "vendor", title: "Vendor", sample: true, about: "Delivery and gold loss by vendor. Scores are sample figures.",
+      kpis: [["Vendors", String(VENDORS.length)], ["On-time rate", Math.round(sum(VENDORS, (v) => v.onTime) / VENDORS.length) + "%"], ["Average wastage", (sum(VENDORS, (v) => v.wastage) / VENDORS.length).toFixed(1) + "%", "allowed 1.5%"], ["Gold held by vendors", g(sum(open, (j) => j.issued - j.pieces - j.scrap))]],
+      charts: [
+        { title: "On-time rate (%)", kind: "bar", data: VENDORS.map((v) => ({ name: v.name.split(" ")[0], v: v.onTime })) },
+        { title: "Wastage against the 1.5% allowance", kind: "lines", keys: ["Wastage", "Allowed"], data: VENDORS.map((v) => ({ name: v.name.split(" ")[0], Wastage: v.wastage, Allowed: 1.5 })) },
+      ],
+      insights: [`${VENDORS.filter((v) => v.wastage > 1.5).map((v) => v.name).join(", ") || "No vendor"} is over the wastage allowance.`, `${[...VENDORS].sort((a, b) => b.onTime - a.onTime)[0].name} is the most reliable on time.`, `${plural(VENDORS.filter((v) => v.onTime < 90).length, "vendor")} below 90% on time.`],
+      table: { title: "Vendor scorecard", head: ["Vendor", "City", "Work", "On time", "Wastage", "Rating"], num: [3, 4], rows: VENDORS.map((v) => [v.name, v.city, v.work, v.onTime + "%", v.wastage + "%", v.rating]) } },
+
+    { id: "stores", title: "Store performance", about: "Each store against its monthly target, and what is on its shelves.",
+      kpis: [...STORES.map((n) => [n, pct(storeRev(n), STORE_TARGET[n]) + "%", `${lakh(storeRev(n))} of ${lakh(STORE_TARGET[n])}`] as [string, string, string]), ["Store revenue this month", lakh(sum(STORES, (n) => storeRev(n)))], ["Pieces in store stock", String(stock.filter((i) => STORES.includes(i.loc)).length)]],
+      charts: [
+        { title: "Revenue against target (%)", kind: "bar", data: STORES.map((n) => ({ name: n.split(" ")[0], v: pct(storeRev(n), STORE_TARGET[n]) })) },
+        { title: "Store revenue by month (lakh)", kind: "stack", keys: STORES, data: span.map((k) => ({ name: monthLabel(k), ...Object.fromEntries(STORES.map((n) => [n, L(sum(inv.filter((v) => v.store === n && monthKey(v.date) === k), (v) => v.amount))])) })) },
+      ],
+      insights: STORES.map((n) => `${n} is at ${pct(storeRev(n), STORE_TARGET[n])}% of target with ${stock.filter((i) => i.loc === n).length} pieces on the shelf.`),
+      table: { title: "Stores", head: ["Store", "Revenue", "Target", "Pieces", "Stock value", "Invoices"], num: [1, 2, 3, 4, 5], rows: STORES.map((n) => [n, lakh(storeRev(n)), lakh(STORE_TARGET[n]), stock.filter((i) => i.loc === n).length, inr(sum(stock.filter((i) => i.loc === n), (i) => i.price)), nowInv.filter((v) => v.store === n).length]) } },
+
+    { id: "dead", title: "Dead stock", about: "Pieces that have sat too long. Ages here are estimated from the tag.",
+      kpis: [["Pieces over 90 days", String(aged.length)], ["Value locked", inr(sum(aged, (i) => i.price))], ["Share of stock", pct(aged.length, stock.length) + "%"], ["Oldest", Math.max(0, ...stock.map((i) => days(i.tag))) + " days"]],
+      charts: [
+        { title: "Pieces by age", kind: "bar", data: [["0-30", 0, 30], ["31-60", 31, 60], ["61-90", 61, 90], ["90+", 91, 999]].map(([name, a, b]) => ({ name: String(name), v: stock.filter((i) => days(i.tag) >= Number(a) && days(i.tag) <= Number(b)).length })) },
+        { title: "Old stock by location", kind: "donut", data: rows(tally(aged, (i) => i.loc)) },
+      ],
+      insights: [`${inr(sum(aged, (i) => i.price))} is tied up in pieces older than 90 days.`, `${top(tally(aged, (i) => i.sku))?.[0] ?? "No SKU"} has the most old pieces.`, "Move old pieces to the store with the best sell-through, or put them on a campaign."],
+      table: { title: "Pieces over 90 days", head: ["Tag", "SKU", "Days", "Location", "Price"], num: [2, 4], rows: [...aged].sort((a, b) => days(b.tag) - days(a.tag)).map((i) => [i.tag, i.sku, days(i.tag), i.loc, inr(i.price)]) } },
+
+    { id: "fast", title: "Fast movers", about: "What sells, how fast, and what is about to run out.",
+      kpis: [["Pieces sold", String(sold.length), `last ${plural(f.months, "month")}`], ["Top SKU", topSku?.[0] ?? "-", topSku ? plural(topSku[1], "piece") : ""], ["Sell-through", pct(sold.length, sold.length + stock.length) + "%"], ["Average days of cover", "26", "sample"]],
+      charts: [
+        { title: "Pieces sold by SKU", kind: "bar", data: s.skus.map((k) => ({ name: k.code.slice(3), v: sold.filter((v) => v.sku === k.code).length })) },
+        { title: "Pieces sold by month", kind: "line", data: span.map((k) => ({ name: monthLabel(k), v: sold.filter((v) => monthKey(v.date) === k).length })) },
+      ],
+      insights: [`${topSku?.[0] ?? "No SKU"} is the fastest mover.`, `${plural(s.skus.filter((k) => !stock.some((i) => i.sku === k.code)).length, "SKU")} with nothing in stock.`, `Sell-through is ${pct(sold.length, sold.length + stock.length)}%.`],
+      table: { title: "SKU movement", head: ["SKU", "Name", "Sold", "In stock", "Sell-through"], num: [2, 3, 4], rows: s.skus.map((k) => { const a = sold.filter((v) => v.sku === k.code).length, b = stock.filter((i) => i.sku === k.code).length; return [k.code, k.name, a, b, pct(a, a + b) + "%"]; }) } },
+  ];
+}
+

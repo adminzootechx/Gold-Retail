@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  BarChart3, Boxes, ClipboardList, Gem, Globe, Hammer, Handshake, Landmark, LayoutDashboard,
+  BarChart3, ChevronDown, Boxes, ClipboardList, Gem, Globe, Hammer, Handshake, Landmark, LayoutDashboard,
   Menu, Package, PackageCheck, PenTool, Play, Receipt, ScrollText, Search, ShieldCheck, ShoppingCart, Store, Users, Wrench, type LucideIcon,
 } from "lucide-react";
 import { useStore } from "../lib/store";
@@ -28,6 +28,7 @@ export default function Frame({ children }: { children: React.ReactNode }) {
   const { s, ready, toast, act, signOut, setRole, sync, dbKind } = useStore();
   const [collapsed, setCollapsed] = useState(false);
   const [open, setOpen] = useState(false);
+  const [fold, setFold] = useState<Record<string, boolean>>({});
   const login = path === "/login";
   const rail = (cls: string) => cx(collapsed && "lg:hidden", !open && "md:max-lg:hidden", cls);
   const ok = s.authed && allowed(s.role, path);
@@ -64,9 +65,16 @@ export default function Frame({ children }: { children: React.ReactNode }) {
           {MODS.map(([group, mods]) => {
             const list = mods.filter((m) => allowed(s.role, m[0]));
             if (!list.length) return null;
+            const hasActive = list.some((m) => m[0] === path);
+            const expanded = fold[group] ?? hasActive;
             return (
               <div key={group}>
-                <p className={rail("mx-2.5 mb-1 mt-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground")}>{group}</p>
+                <button type="button" aria-expanded={expanded} onClick={() => setFold({ ...fold, [group]: !expanded })}
+                  className={rail("mt-1.5 flex min-h-10 w-full items-center justify-between rounded-lg px-2.5 text-left text-[12px] font-semibold uppercase tracking-[0.1em] hover:bg-muted pointer-coarse:min-h-11 " + (hasActive ? "text-gold" : "text-muted-foreground"))}>
+                  {group}
+                  <ChevronDown className={cx("size-4 transition-transform", expanded && "rotate-180")} aria-hidden />
+                </button>
+                <div className={cx(!expanded && "hidden", !expanded && collapsed && "lg:block", !expanded && !open && "md:max-lg:block", "pl-1 lg:pl-3", collapsed && "lg:pl-0", !open && "md:max-lg:pl-0")}>
                 {list.map(([href, label]) => {
                   const Icon = ICONS[href];
                   const on = path === href;
@@ -78,6 +86,7 @@ export default function Frame({ children }: { children: React.ReactNode }) {
                     </Link>
                   );
                 })}
+                </div>
               </div>
             );
           })}
