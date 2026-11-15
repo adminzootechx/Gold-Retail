@@ -7,7 +7,7 @@ import { ofKind } from "../lib/records";
 import { STORE_TARGET } from "../lib/home";
 import type { Channel, Invoice, State } from "../lib/data";
 
-export type Row = Record<string, string | number>;
+export type Row = Record<string, string | number | null>;
 export interface Chart {
   title: string; note?: string;
   kind: "bar" | "hbar" | "line" | "lines" | "stack" | "donut";
@@ -16,7 +16,7 @@ export interface Chart {
 export interface Dash {
   id: string; title: string; about: string; sample?: boolean;
   alerts: { text: string; href: string }[];
-  kpis: [string, string, string?][];
+  kpis: [string, string, string?, number?][];
   charts: Chart[];
   insights: string[];
   table: { title: string; head: string[]; rows: (string | number)[][]; num?: number[] };
@@ -50,8 +50,17 @@ export function build(s: State, f: Filter): Dash[] {
   const all = s.invoices;
   const inv = all.filter((v) => span.includes(monthKey(v.date)) && (f.channel === "All" || v.channel === f.channel));
   const monthly = (list: Invoice[], pick: (v: Invoice) => number = (v) => v.amount) => span.map((k) => ({ key: k, name: monthLabel(k), v: sum(list.filter((v) => monthKey(v.date) === k), pick) }));
+  const day = +TODAY.slice(8);
+  const lastKey = prevMonthKey(THIS_MONTH);
+  const upTo = (m: string) => all.filter((v) => monthKey(v.date) === m && +v.date.slice(8) <= day);
   const cur = sum(all.filter((v) => monthKey(v.date) === THIS_MONTH), (v) => v.amount);
-  const prev = revenueToDay(all, prevMonthKey(THIS_MONTH), +TODAY.slice(8));
+  const prev = revenueToDay(all, lastKey, day);
+  const nowN = upTo(THIS_MONTH).length, prevN = upTo(lastKey).length;
+  const chg = (a: number, b: number) => (b ? Math.round(((a - b) / b) * 100) : undefined);
+  const byTag = new Map(s.items.map((i) => [i.tag, i]));
+  const fineSold = (list: Invoice[]) => Math.round(sum(list.flatMap((v) => v.tags), (t) => (byTag.get(t)?.net ?? 0) * 0.75) / 100) / 10;
+  const mtd = (m: string, d: number) => L(revenueToDay(all, m, d));
+  const rateHistory = [...ofKind(s.records, "rate")].reverse();
   const nowInv = inv.filter((v) => monthKey(v.date) === THIS_MONTH);
   const total = sum(inv, (v) => v.amount);
   const channels = ["Retail", "Online", "HNI", "Corporate"] as const;
@@ -126,11 +135,14 @@ export function build(s: State, f: Filter): Dash[] {
       table: { title: "Stage times", head: ["Stage", "Average days", "Target", "Gap"], num: [1, 2, 3], rows: [["Casting", 3, 3, 0], ["Setting", 5, 4, 1], ["Finishing", 2, 2, 0], ["QC and hallmark", 3, 3, 0]] } },
 
     { id: "sales", title: "Sales", about: "Revenue, channel mix and what a typical invoice looks like.",
-      kpis: [["Revenue this month", lakh(sum(nowInv, (v) => v.amount)), delta(cur, prev)], ["Invoices", String(inv.length), `in the last ${plural(f.months, "month")}`], ["Average invoice", inr(total / Math.max(1, inv.length))], ["Online share", pct(byChannel.Online ?? 0, total) + "%"]],
+      kpis: [["Revenue this month", lakh(cur), `${lakh(prev)} on the same days last month`, chg(cur, prev)], ["Invoices this month", String(nowN), `${prevN} on the same days last month`, chg(nowN, prevN)], ["Average invoice", inr(cur / Math.max(1, nowN)), `${inr(prev / Math.max(1, prevN))} last month`, chg(cur / Math.max(1, nowN), prev / Math.max(1, prevN))], ["Fine gold sold this month", fineSold(nowInv) + " g", `${plural(sum(nowInv, (v) => v.tags.length), "piece")} sold`]],
       charts: [
         { title: "Revenue by month (lakh)", kind: "line", data: monthly(inv).map((r) => ({ name: r.name, v: L(r.v) })) },
         { title: "Revenue by channel and month (lakh)", kind: "stack", keys: [...channels], data: span.map((k) => ({ name: monthLabel(k), ...Object.fromEntries(channels.map((c) => [c, L(sum(inv.filter((v) => v.channel === c && monthKey(v.date) === k), (v) => v.amount))])) })) },
         { title: "Channel share of revenue", kind: "donut", data: rows(byChannel) },
+        { title: "This month against last month (lakh, running total)", kind: "lines", keys: ["This month", "Last month"], data: Array.from({ length: 30 }, (_, i) => ({ name: String(i + 1), "This month": i + 1 <= day ? mtd(THIS_MONTH, i + 1) : null, "Last month": mtd(lastKey, i + 1) })) },
+        { title: "Fine gold sold by month (g)", kind: "bar", data: span.map((k) => ({ name: monthLabel(k), v: fineSold(inv.filter((v) => monthKey(v.date) === k)) })) },
+        { title: "Average invoice by month (thousand)", kind: "line", data: span.map((k) => { const m = inv.filter((v) => monthKey(v.date) === k); return { name: monthLabel(k), v: Math.round(sum(m, (v) => v.amount) / Math.max(1, m.length) / 1000) }; }) },
       ],
       insights: [
         best ? `${best[0]} brings the most revenue: ${lakh(best[1])}, ${pct(best[1], total)}% of the period.` : "No sales in this period.",
@@ -144,6 +156,7 @@ export function build(s: State, f: Filter): Dash[] {
       charts: [
         { title: "Billed against collected (lakh)", kind: "lines", keys: ["Billed", "Collected"], data: span.map((k) => ({ name: monthLabel(k), Billed: L(sum(inv.filter((v) => monthKey(v.date) === k), (v) => v.amount)), Collected: L(sum(inv.filter((v) => monthKey(v.date) === k), (v) => v.paid)) })) },
         { title: "Receivable against payable (lakh)", kind: "bar", data: [{ name: "Receivable", v: L(owedTotal) }, { name: "Payable", v: L(apTotal) }] },
+        { title: "24K gold rate (₹ per gram)", kind: "line", data: rateHistory.map((r) => ({ name: r.date.slice(8) + " " + monthLabel(r.date.slice(0, 7)), v: Number(r.f.r24) })) },
       ],
       insights: [`We are owed ${inr(owedTotal)} and owe ${inr(apTotal)}.`, `${pct(sum(inv, (v) => v.paid), total)}% of what we billed in this period has been collected.`, "Margin, tax and ledger postings are not built yet, so no profit figure is shown."],
       table: { title: "Unpaid invoices", head: ["Invoice", "Customer", "Date", "Age", "Due"], num: [4], rows: owed.map((v) => [v.id, seen(v.custId), v.date, ageBucket(v.date), inr(due(v))]) } },

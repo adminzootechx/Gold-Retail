@@ -179,6 +179,14 @@ export function seed(): Stored {
       invoices.push({ id: "", date: `${ym}-${String(day).padStart(2, "0")}`, channel, store, custId: cust.id, amount, paid, tags: [], sku: channel === "Retail" || channel === "Online" ? prod.code : undefined });
     }
   }
+  // Spread each month's invoices evenly across its days, so a month-to-date comparison reads like a real business.
+  for (const [ym, count, lastDay] of months) {
+    invoices.filter((v) => v.date.startsWith(ym)).sort((x, y) => x.date.localeCompare(y.date)).forEach((v, i) => { v.date = `${ym}-${String(1 + Math.floor((i * lastDay) / count)).padStart(2, "0")}`; });
+  }
+  // November so far runs a little ahead of October's same days.
+  const toDay = (ym: string, d: number) => invoices.filter((v) => v.date.startsWith(ym) && +v.date.slice(8) <= d).reduce((x, v) => x + v.amount, 0);
+  const k = (toDay("2026-10", 12) * 1.09) / Math.max(1, toDay("2026-11", 12));
+  for (const v of invoices) if (v.date.startsWith("2026-11")) { const was = v.amount; v.amount = Math.round((was * k) / 100) * 100; v.paid = Math.round((v.paid / was) * v.amount / 100) * 100; }
   invoices.sort((a, b) => a.date.localeCompare(b.date));
   invoices.forEach((v, i) => { v.id = "INV-" + (3200 + i); });
 

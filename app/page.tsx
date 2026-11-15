@@ -39,7 +39,7 @@ function FounderHome({ s }: { s: State }) {
   return (
     <>
       <Facts items={[
-        { label: "Revenue this month", value: lakh(r.now), note: `Last month closed at ${lakh(r.prevTotal)}`, href: "/?view=analytics&v=sales" },
+        { label: "Revenue this month", value: lakh(r.now), note: `Last month closed at ${lakh(r.prevTotal)}`, href: "/?view=analytics&v=sales", delta: r.before ? Math.round(((r.now - r.before) / r.before) * 100) : undefined },
         { label: "Stock value", value: lakh(live.reduce((a, i) => a + i.price, 0)), note: `${plural(live.length, "piece")} on the books`, href: "/inventory" },
         { label: "Owed to us", value: lakh(owed.reduce((a, v) => a + (v.amount - v.paid), 0)), note: `${plural(owed.length, "unpaid invoice")}`, href: "/finance" },
         { label: "Gold ledger", value: short ? plural(short, "card") + " short" : "Balanced", note: short ? "Job cards that do not reconcile" : "Every received job card reconciles", href: "/job-work", alert: short > 0 },
@@ -48,7 +48,7 @@ function FounderHome({ s }: { s: State }) {
         <NeedsYou items={todos(s, "Founder")} clear="Nothing needs a decision. Gold reconciles on every received job card and no payment is overdue." />
         <GoldWhere parts={goldWhere(s)} />
       </div>
-      <Glance s={s} picks={[["sales", 0], ["sales", 2], ["ledgers", 0], ["stores", 0], ["inventory", 0], ["customer", 1]]} />
+      <Glance s={s} picks={[["sales", 3], ["sales", 0], ["sales", 4], ["sales", 2], ["finance", 2], ["stores", 0]]} />
     </>
   );
 }

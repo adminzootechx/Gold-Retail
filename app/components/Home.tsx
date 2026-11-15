@@ -70,7 +70,7 @@ export function NeedsYou({ items, clear }: { items: Todo[]; clear: string }) {
 }
 
 /** A few figures, each a link to where it comes from. */
-export function Facts({ items }: { items: { label: string; value: string; note: string; href: string; alert?: boolean }[] }) {
+export function Facts({ items }: { items: { label: string; value: string; note: string; href: string; alert?: boolean; delta?: number }[] }) {
   return (
     <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((f) => <Tile key={f.label} {...f} />)}
