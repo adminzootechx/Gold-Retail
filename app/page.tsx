@@ -15,7 +15,7 @@ import Analytics, { ChartView } from "./dashboards/Analytics";
 import { build } from "./dashboards/build";
 
 const both = ["Mumbai Flagship", "Delhi Store"];
-const split = "grid items-start gap-8 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]";
+const split = "grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]";
 
 /** A few charts picked for the role, straight from the analytics views. */
 function Glance({ s, picks }: { s: State; picks: [string, number][] }) {
@@ -62,7 +62,7 @@ function ProductionHome({ s }: { s: State }) {
       <ProductionBand s={s} />
       <div className={split}>
         <NeedsYou items={todos(s, "Production manager")} clear="Nothing is waiting on you. Every received piece is tagged and every job card balances." />
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-6">
           <Pipeline steps={pipeline(s)} />
           <Card title="Gold on job cards">
             <Grid head={["Card", "Issued", "Status"]} num={[1]}
@@ -97,7 +97,7 @@ function StoreHome({ s }: { s: State }) {
       ]} />
       <div className={split}>
         <NeedsYou items={todos(s, "Store manager")} clear="Nothing needs you. All online orders are moving and no repair is waiting for a call." />
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-6">
           <Card title="Latest sales">
             <Grid head={["Invoice", "Customer", "Amount"]} num={[2]} rows={latest.map((v) => [v.id, custName(s.customers, v.custId), inr(v.amount)])} />
           </Card>

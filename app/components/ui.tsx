@@ -28,8 +28,8 @@ export function PageHeader({ title, sub, children }: { title: ReactNode; sub?: R
   return (
     <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-3xl font-semibold">{title}</h1>
-        {sub && <p className="mt-0.5 text-muted-foreground">{sub}</p>}
+        <h1 className="text-[2.1rem] font-semibold leading-tight">{title}</h1>
+        {sub && <p className="mt-1 text-base text-muted-foreground">{sub}</p>}
       </div>
       {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </div>
@@ -38,8 +38,8 @@ export function PageHeader({ title, sub, children }: { title: ReactNode; sub?: R
 
 export function Card({ title, children, className }: { title?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <div className={cx("min-w-0 rounded-2xl border border-border bg-card p-6", className)}>
-      {title && <h2 className="mb-4 text-lg font-semibold">{title}</h2>}
+    <div className={cx("min-w-0 rounded-[20px] border border-border bg-card p-6", className)}>
+      {title && <h2 className="mb-5 text-xl font-semibold">{title}</h2>}
       {children}
     </div>
   );
@@ -125,10 +125,10 @@ export function tabKeys(e: KeyboardEvent<HTMLElement>) {
 
 export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: [T, string][]; value: T; onChange: (v: T) => void }) {
   return (
-    <div className="mb-4 flex gap-1 overflow-x-auto border-b border-border" role="tablist">
+    <div className="mb-6 inline-flex max-w-full gap-1 overflow-x-auto rounded-xl bg-mist p-1" role="tablist">
       {tabs.map(([k, l]) => (
         <button key={k} role="tab" aria-selected={value === k} tabIndex={value === k ? 0 : -1} onKeyDown={tabKeys} onClick={() => onChange(k)}
-          className={cx("-mb-px min-h-10 border-b-2 px-3.5 py-2 font-semibold pointer-coarse:min-h-11", value === k ? "border-gold text-primary" : "border-transparent text-muted-foreground")}>{l}</button>
+          className={cx("min-h-10 whitespace-nowrap rounded-lg px-4 py-2 font-semibold transition-colors pointer-coarse:min-h-11", value === k ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-primary")}>{l}</button>
       ))}
     </div>
   );

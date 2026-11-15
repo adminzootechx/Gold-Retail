@@ -21,8 +21,8 @@ export function CertBadge({ cert, huid }: { cert?: string; huid?: string }) {
   const none = !cert || cert === "None";
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
-      {none ? <span className="text-muted-foreground">No certificate</span> : <span className="rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[12px]">{cert}</span>}
-      {huid && <span className="rounded-md border border-gold/60 bg-gold-light px-1.5 py-0.5 font-mono text-[12px]">HUID {huid}</span>}
+      {cert === undefined && huid ? null : none ? <span className="text-muted-foreground">No certificate</span> : <span className="rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[12px]">{cert}</span>}
+      {huid && <span className="rounded-md border border-gold/60 bg-gold-light px-1.5 py-0.5 font-mono text-[12px]">{cert === undefined ? "" : "HUID "}{huid}</span>}
     </span>
   );
 }
@@ -50,9 +50,9 @@ export function Tile({ label, value, note, alert, href, delta, deltaNote = "vs s
     <>
       <div className="flex items-start justify-between gap-3">
         <span className="text-sm text-muted-foreground">{label}</span>
-        <span className="grid size-9 flex-none place-items-center rounded-full bg-gold-light text-primary">{kpiIcon(label)}</span>
+        <span className="grid size-10 flex-none place-items-center rounded-xl bg-mist text-primary transition-colors group-hover:bg-gold group-hover:text-gold-fg">{kpiIcon(label)}</span>
       </div>
-      <b className={cx("mt-2 block font-sans text-[1.9rem] font-semibold leading-tight tabular-nums", alert && "text-danger")}>{value}</b>
+      <b className={cx("mt-3 block font-display text-[2rem] font-semibold leading-tight tabular-nums", alert && "text-danger")}>{value}</b>
       {delta !== undefined && (
         <span className={cx("mt-2 inline-flex items-center gap-1 text-sm font-semibold", delta >= 0 ? "text-success" : "text-danger")}>
           {delta >= 0 ? <ArrowUpRight className="size-4" aria-hidden /> : <ArrowDownRight className="size-4" aria-hidden />}
@@ -62,13 +62,13 @@ export function Tile({ label, value, note, alert, href, delta, deltaNote = "vs s
       {note && <span className="mt-1 block text-sm text-muted-foreground">{note}</span>}
     </>
   );
-  const cls = "block min-w-0 rounded-2xl border border-border bg-card p-5 transition-colors duration-150";
-  return href ? <Link href={href} className={cx(cls, "hover:border-primary/40")}>{body}</Link> : <div className={cls}>{body}</div>;
+  const cls = "group block min-w-0 rounded-2xl border border-border bg-card p-6 transition-[transform,box-shadow,border-color] duration-200";
+  return href ? <Link href={href} className={cx(cls, "hover:-translate-y-0.5 hover:border-gold/60 hover:shadow-[0_8px_24px_rgba(4,53,68,0.10)]")}>{body}</Link> : <div className={cls}>{body}</div>;
 }
 
 export function Kpis({ items }: { items: [label: string, value: string, sub?: string, delta?: number][] }) {
   return (
-    <div className="mb-8 grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-4">
+    <div className="mb-10 grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-6">
       {items.map(([l, v, sub, dl]) => <Tile key={l} label={l} value={v} note={sub} delta={dl} />)}
     </div>
   );

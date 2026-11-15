@@ -2,7 +2,8 @@
 
 /* Design tokens. Light only. Values follow the Jewelrex (gold ERP) reference build. */
 :root {
-  --background: #ffffff;
+  --background: #f4f7f8;
+  --mist: #e4eef1;
   --foreground: #0b2530;
   --card: #ffffff;
   --border: #dfe5e8;
@@ -32,7 +33,8 @@
 
 @theme inline {
   --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-display: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-inter), system-ui, sans-serif;
+  --color-mist: var(--mist);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -79,10 +81,15 @@ body {
 }
 
 h1, h2, h3 { text-wrap: balance;
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-weight: 650;
-  letter-spacing: -0.015em;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
+
+/* The daily-target ring draws itself once when Home opens. */
+@keyframes ring-draw { from { stroke-dashoffset: var(--ring-len); } }
+.ring-arc { animation: ring-draw 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) { .ring-arc { animation: none; } }
 
 p, li, dd { text-wrap: pretty; }
 

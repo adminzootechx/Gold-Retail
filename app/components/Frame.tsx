@@ -118,7 +118,7 @@ export default function Frame({ children }: { children: React.ReactNode }) {
             const on = path === href;
             return (
               <Link key={href} href={href} onClick={() => { setOpen(false); setCollapsed(false); }} title={label} aria-current={on ? "page" : undefined}
-                className={cx("mb-0.5 flex min-h-11 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 text-[15px] font-medium", collapsed && "lg:justify-center", !open && "md:max-lg:justify-center", on ? "bg-white text-primary" : "text-white/85 hover:bg-white/10 hover:text-white")}>
+                className={cx("mb-0.5 flex min-h-11 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 text-[15px] font-normal", collapsed && "lg:justify-center", !open && "md:max-lg:justify-center", on ? "bg-white text-primary" : "text-white/85 hover:bg-white/10 hover:text-white")}>
                 <Icon className="size-4 flex-none" aria-hidden />
                 <span className={rail("")}>{label}</span>
               </Link>
@@ -139,7 +139,7 @@ export default function Frame({ children }: { children: React.ReactNode }) {
                     if (rail) { setCollapsed(false); setOpen(window.innerWidth < 1024); setFold({ ...fold, [group]: true }); }
                     else setFold({ ...fold, [group]: !expanded });
                   }}
-                  className={cx("mt-1.5 flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px] font-medium hover:bg-white/10", collapsed && "lg:justify-center", !open && "md:max-lg:justify-center", hasActive ? "text-white" : "text-white/80", hasActive && collapsed && "lg:bg-white/15")}>
+                  className={cx("mt-1.5 flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px] font-normal hover:bg-white/10", collapsed && "lg:justify-center", !open && "md:max-lg:justify-center", hasActive ? "text-white" : "text-white/80", hasActive && collapsed && "lg:bg-white/15")}>
                   {(() => { const GI = GROUP_ICONS[group]; return <GI className={cx("hidden size-4 flex-none", collapsed && "lg:block", !open && "md:max-lg:block")} aria-hidden />; })()}
                   <span className={rail("flex-1 whitespace-nowrap")}>{group}</span>
                   <ChevronDown className={rail(cx("size-4 transition-transform", expanded && "rotate-180"))} aria-hidden />
@@ -162,7 +162,7 @@ export default function Frame({ children }: { children: React.ReactNode }) {
         <div className="no-print border-t border-white/10 p-2.5"><AccountMenu dark labelCls={rail("")} /></div>
       </aside>
       <DetailCtx.Provider value={{ open: setDetail }}>
-      <div className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-white md:m-3 md:ml-0 md:rounded-[28px] md:shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_12px_40px_rgba(0,0,0,0.45)]">
+      <div className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background md:m-3 md:ml-0 md:rounded-[28px] md:shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_12px_40px_rgba(0,0,0,0.45)]">
         <header className="no-print flex h-16 flex-none items-center gap-3 border-b border-border bg-card px-4 md:px-6">
           <button className={cx(control, "inline-flex w-10 flex-none items-center justify-center hover:bg-muted pointer-coarse:w-11 lg:hidden")} onClick={() => setOpen(!open)} aria-label="Open menu" aria-expanded={open}>
             <Menu className="size-4" />

@@ -47,9 +47,9 @@ export function NeedsYou({ items, clear }: { items: Todo[]; clear: string }) {
   const [all, setAll] = useState(false);
   const shown = all ? items : items.slice(0, 5);
   return (
-    <section aria-labelledby="needs-you" className="rounded-2xl border border-border bg-card">
+    <section aria-labelledby="needs-you" className="rounded-[20px] border border-border bg-card">
       <div className="flex items-baseline justify-between gap-3 px-6 pt-6">
-        <h2 id="needs-you" className="text-lg font-semibold">Needs you</h2>
+        <h2 id="needs-you" className="text-xl font-semibold">Needs you</h2>
         {items.length > 0 && <span className="text-muted-foreground">{items.length} open</span>}
       </div>
       {!items.length ? (
@@ -84,7 +84,7 @@ export function NeedsYou({ items, clear }: { items: Todo[]; clear: string }) {
 /** A few figures, each a link to where it comes from. */
 export function Facts({ items }: { items: { label: string; value: string; note: string; href: string; alert?: boolean; delta?: number }[] }) {
   return (
-    <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((f) => <Tile key={f.label} {...f} />)}
     </div>
   );
