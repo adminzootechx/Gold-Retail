@@ -1,11 +1,12 @@
 "use client";
 import Link from "./Go";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { X } from "lucide-react";
 import { useStore } from "../lib/store";
 import { todos, type Level } from "../lib/home";
 import { Badge, cx, type Kind } from "./ui";
 import { DecideButtons } from "./Home";
+import { useDialog } from "../lib/useDialog";
 
 const LEVEL: Record<Level, [string, Kind]> = { blocked: ["Blocked", "bad"], decision: ["Decision", "warn"], todo: ["To do", "info"] };
 
@@ -16,23 +17,7 @@ export default function NotificationDrawer({ open, onClose }: { open: boolean; o
   const close = useRef<HTMLButtonElement>(null);
 
   const panel = useRef<HTMLElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const from = document.activeElement as HTMLElement | null;
-    // The panel turns visible as it starts to slide, so focus moves a moment later.
-    const t = setTimeout(() => close.current?.focus(), 60);
-    const keys = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key !== "Tab" || !panel.current) return;
-      const f = [...panel.current.querySelectorAll<HTMLElement>('a, button, [tabindex]:not([tabindex="-1"])')].filter((x) => x.offsetParent !== null);
-      if (!f.length) return;
-      const first = f[0], last = f[f.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-    };
-    document.addEventListener("keydown", keys);
-    return () => { clearTimeout(t); document.removeEventListener("keydown", keys); from?.focus(); };
-  }, [open, onClose]);
+  useDialog(open, onClose, panel, close);
 
   return (
     <>

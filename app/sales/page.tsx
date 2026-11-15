@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useStore } from "../lib/store";
+import { useDetail } from "../lib/detail";
 import { corporateOrder, posSale, submitDiscount } from "../lib/actions2";
 import { g, inr } from "../lib/calc";
 import { THIS_MONTH, custName, lakh, monthKey } from "../lib/stats";
@@ -13,6 +14,7 @@ const status = (paid: number, amount: number) => (paid >= amount ? "Paid" : paid
 
 export default function Sales() {
   const { s, act } = useStore();
+  const detail = useDetail();
   const [tab, setTab] = useState<Tab>("orders");
   const [ch, setCh] = useState("");
   const [pct, setPct] = useState(12);
@@ -41,7 +43,7 @@ export default function Sales() {
       {tab === "orders" && (
         <>
           <Kpis items={[["Invoices this month", String(month.length)], ["Value this month", lakh(month.reduce((a, o) => a + o.amount, 0))], ["Unpaid balance", inr(s.invoices.reduce((a, o) => a + (o.amount - o.paid), 0))], ["Online orders open", String(s.orders.filter((o) => o.state < 7).length)]]} />
-          <Grid head={["Invoice", "Date", "Channel", "Customer", "Store", "Amount", "Status"]} num={[5]} onRow={(i) => { setInv(rows[i].id); setTab("invoice"); }}
+          <Grid head={["Invoice", "Date", "Channel", "Customer", "Store", "Amount", "Status"]} num={[5]} onRow={(i) => detail.open({ kind: "invoice", id: rows[i].id })}
             rows={rows.map((o) => [<span key="i" className="font-mono text-[12.5px]">{o.id}</span>, o.date, o.channel, custName(s.customers, o.custId), o.store, inr(o.amount), <Pill key="s">{status(o.paid, o.amount)}</Pill>])} />
         </>
       )}

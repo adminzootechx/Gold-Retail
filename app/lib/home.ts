@@ -18,7 +18,7 @@ export interface Todo {
 }
 
 /** Monthly sales targets per store, in rupees. */
-export const STORE_TARGET: Record<string, number> = { "Mumbai Flagship": 4000000, "Delhi Store": 2000000 };
+export const STORE_TARGET: Record<string, number> = { "Mumbai Flagship": 2400000, "Delhi Store": 1200000 };
 
 /** The vendor the portal prototype signs in as. */
 export const VENDOR_SELF = "Shree Karigar Works";

@@ -8,6 +8,7 @@ import { STORE_TARGET, VENDOR_SELF, goldWhere, pipeline, revenueNow, salesMonth,
 import { custName, dayLabel, lakh, plural, receivables, short } from "./lib/stats";
 import { Card, PageHeader, Tabs } from "./components/ui";
 import { Grid, Pill } from "./components/kit";
+import { FounderBand, ProductionBand, StoreBand } from "./components/RetailBand";
 import { Facts, GoldWhere, NeedsYou, Pipeline } from "./components/Home";
 import type { State } from "./lib/data";
 import Analytics, { ChartView } from "./dashboards/Analytics";
@@ -38,6 +39,7 @@ function FounderHome({ s }: { s: State }) {
   const short = s.jcs.filter((j) => j.state === "Received" && !j.approved && jcCalc(j).unrec > 0).length;
   return (
     <>
+      <FounderBand s={s} />
       <Facts items={[
         { label: "Revenue this month", value: lakh(r.now), note: `Last month closed at ${lakh(r.prevTotal)}`, href: "/?view=analytics&v=sales", delta: r.before ? Math.round(((r.now - r.before) / r.before) * 100) : undefined },
         { label: "Stock value", value: lakh(live.reduce((a, i) => a + i.price, 0)), note: `${plural(live.length, "piece")} on the books`, href: "/inventory" },
@@ -57,6 +59,7 @@ function ProductionHome({ s }: { s: State }) {
   const open = s.jcs.filter((j) => j.state !== "Closed");
   return (
     <>
+      <ProductionBand s={s} />
       <div className={split}>
         <NeedsYou items={todos(s, "Production manager")} clear="Nothing is waiting on you. Every received piece is tagged and every job card balances." />
         <div className="flex flex-col gap-8">
@@ -84,9 +87,10 @@ function StoreHome({ s }: { s: State }) {
   const latest = [...s.invoices].reverse().filter((v) => both.includes(v.store)).slice(0, 4);
   return (
     <>
+      <StoreBand s={s} />
       <Link href="/stores" className="mb-6 flex min-h-14 items-center justify-center rounded-2xl border border-gold bg-gold px-6 text-base font-semibold text-gold-fg hover:brightness-105 md:w-72">New bill</Link>
       <Facts items={[
-        { label: "Sold today", value: today.length ? short(today.reduce((a, v) => a + v.amount, 0)) : "Nothing yet", note: plural(today.length, "bill"), href: "/stores" },
+        { label: "Bills today", value: String(today.length), note: today.length ? short(today.reduce((a, v) => a + v.amount, 0)) + " in total" : "Nothing billed yet", href: "/stores" },
         { label: "This month", value: Math.round((month / target) * 100) + "%", note: `${lakh(month)} of ${lakh(target)} target`, href: "/stores" },
         { label: "Online orders to move", value: String(moving), note: "Not yet delivered", href: "/ecommerce" },
         { label: "Arriving at your stores", value: String(incoming), note: incoming ? "Receive them when they land" : "Nothing in transit", href: "/stores" },

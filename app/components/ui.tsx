@@ -14,7 +14,7 @@ const KINDS = {
 export type Kind = keyof typeof KINDS;
 
 export function Badge({ kind = "mute", children }: { kind?: Kind; children: ReactNode }) {
-  return <span className={cx("inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold", KINDS[kind])}>{children}</span>;
+  return <span className={cx("relative inline-block whitespace-nowrap rounded-md py-0.5 pl-5 pr-2.5 text-xs font-semibold before:absolute before:left-2 before:top-1/2 before:size-1.5 before:-translate-y-1/2 before:rounded-full before:bg-current before:opacity-60", KINDS[kind])}>{children}</span>;
 }
 
 const STATUS: Record<Status, [string, Kind]> = {
@@ -81,9 +81,14 @@ export function Tr({ cells, num = [], onClick, selected }: { cells: ReactNode[];
   return (
     <tr
       onClick={onClick}
-      onKeyDown={onClick ? (e) => { if (e.key === "Enter") onClick(); } : undefined}
+      onKeyDown={onClick ? (e) => {
+        if (e.key === "Enter") onClick();
+        // Arrow keys move between rows, so a list can be worked without the mouse.
+        const to = e.key === "ArrowDown" ? e.currentTarget.nextElementSibling : e.key === "ArrowUp" ? e.currentTarget.previousElementSibling : null;
+        if (to instanceof HTMLElement) { e.preventDefault(); to.focus(); }
+      } : undefined}
       tabIndex={onClick ? 0 : undefined}
-      className={cx("border-b border-border last:border-0", onClick && "cursor-pointer hover:bg-gold-light", selected && "bg-gold-light")}
+      className={cx("border-b border-border outline-none last:border-0 focus-visible:bg-gold-light focus-visible:shadow-[inset_3px_0_0_var(--gold)]", onClick && "cursor-pointer hover:bg-gold-light", selected && "bg-gold-light")}
     >
       {cells.map((c, i) => (
         <td key={i} className={cx("whitespace-nowrap px-3.5 py-2.5 align-middle", num.includes(i) && "text-right tabular-nums")}>{c}</td>

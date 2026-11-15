@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useStore } from "../lib/store";
 import { posSale, receiveItem } from "../lib/actions2";
 import { saveWalkin } from "../lib/actions3";
@@ -13,7 +13,7 @@ import { STORES } from "../lib/mock";
 import type { Item } from "../lib/data";
 
 type Tab = "pos" | "stock" | "receipt" | "day" | "targets" | "walkin";
-const TARGET: Record<string, number> = { "Mumbai Flagship": 4000000, "Delhi Store": 2000000 };
+const TARGET: Record<string, number> = { "Mumbai Flagship": 2400000, "Delhi Store": 1200000 };
 
 export default function Stores() {
   const { s, act, say } = useStore();
@@ -22,6 +22,7 @@ export default function Stores() {
   const [cart, setCart] = useState<string[]>([]);
   const [pick, setPick] = useState("");
   const [scan, setScan] = useState("");
+  const scanRef = useRef<HTMLInputElement>(null);
   const [cust, setCust] = useState("Walk-in customer");
   const [sale, setSale] = useState<{ inv: string; lines: Item[]; who: string } | null>(null);
   const [open, setOpen] = useState(false);
@@ -49,6 +50,7 @@ export default function Stores() {
     setSale({ inv, lines, who: cust });
     act((d) => posSale(d, cart, cust, store));
     setCart([]);
+    scanRef.current?.focus();
   };
 
   return (
@@ -62,7 +64,7 @@ export default function Stores() {
         <div className="grid items-start gap-3.5 lg:grid-cols-[1.2fr_1fr]">
           <Card title="Bill a sale">
             <Field label="Scan a tag with the barcode scanner, then Enter" htmlFor="scan">
-              <input id="scan" autoFocus value={scan} onChange={(e) => setScan(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addScanned(); }} placeholder="AK-RNG-014-0003" className={inputCls + " font-mono"} />
+              <input id="scan" ref={scanRef} autoFocus value={scan} onChange={(e) => setScan(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addScanned(); }} placeholder="AK-RNG-014-0003" className="h-14 w-full rounded-xl border border-border bg-background px-4 font-mono text-lg outline-none focus:border-gold focus:ring-[3px] focus:ring-gold/20" />
             </Field>
             <Field label="Or choose a piece (this store only)" htmlFor="pick">
               <div className="flex gap-2">
@@ -78,8 +80,9 @@ export default function Stores() {
           </Card>
           <div className="flex flex-col gap-3.5">
             <Card title="Bill">
-              <Rec rows={[["Pieces", String(lines.length)], ["Taxable value", inr(subtotal / 1.03)], ["GST (rate from configuration)", inr(subtotal - subtotal / 1.03)], ["Total", inr(subtotal), true]]} />
-              <div className="mt-3"><Btn gold disabled={!lines.length} onClick={complete}>Complete sale</Btn></div>
+              <div className="flex items-baseline justify-between"><span className="text-muted-foreground">Total</span><b className="text-4xl font-semibold tabular-nums">{inr(subtotal)}</b></div>
+              <p className="mt-1 text-right text-sm text-muted-foreground">{lines.length} {lines.length === 1 ? "piece" : "pieces"} · taxable {inr(subtotal / 1.03)} · GST {inr(subtotal - subtotal / 1.03)}</p>
+              <Btn gold disabled={!lines.length} onClick={complete} className="mt-5 min-h-14 w-full text-base">Complete sale</Btn>
             </Card>
             {sale && (
               <Card title={`Receipt ${sale.inv}`}>

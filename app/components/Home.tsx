@@ -30,6 +30,18 @@ export function DecideButtons({ id, label }: { id: string; label: string }) {
   );
 }
 
+/** Keys on a Needs You row: arrows move, A approves, R rejects. A large amount still asks for the second press. */
+function rowKeys(e: React.KeyboardEvent<HTMLLIElement>) {
+  const t = e.target as HTMLElement;
+  if (e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+  const li = e.currentTarget;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    const to = e.key === "ArrowDown" ? li.nextElementSibling : li.previousElementSibling;
+    if (to instanceof HTMLElement) { e.preventDefault(); to.focus(); }
+  } else if (e.key.toLowerCase() === "a") li.querySelector<HTMLElement>('button[aria-label^="Approve"], button[aria-label^="Confirm approve"]')?.click();
+  else if (e.key.toLowerCase() === "r") li.querySelector<HTMLElement>('button[aria-label^="Reject"]')?.click();
+}
+
 /** The ranked list. Decisions can be made in the row; everything else links to the record itself. */
 export function NeedsYou({ items, clear }: { items: Todo[]; clear: string }) {
   const [all, setAll] = useState(false);
@@ -45,7 +57,7 @@ export function NeedsYou({ items, clear }: { items: Todo[]; clear: string }) {
       ) : (
         <ul className="mt-3 divide-y divide-border/60">
           {shown.map((t) => (
-            <li key={t.id} className="flex flex-wrap items-center gap-x-5 gap-y-2 px-6 py-4">
+            <li key={t.id} tabIndex={0} onKeyDown={rowKeys} className="flex flex-wrap items-center gap-x-5 gap-y-2 px-6 py-4 outline-none focus-visible:bg-muted/60 focus-visible:shadow-[inset_3px_0_0_var(--gold)]">
               <span className="w-[5.25rem] flex-none"><Badge kind={LEVEL[t.level][1]}>{LEVEL[t.level][0]}</Badge></span>
               <div className="min-w-[13rem] flex-1">
                 <div className="font-medium">{t.what}</div>

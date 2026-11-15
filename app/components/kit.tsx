@@ -16,6 +16,17 @@ export function Pill({ children }: { children: string }) {
   return <Badge kind={k}>{children}</Badge>;
 }
 
+/** A certificate number and HUID as one tidy mark: the lab, the number, and the hallmark. */
+export function CertBadge({ cert, huid }: { cert?: string; huid?: string }) {
+  const none = !cert || cert === "None";
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1.5">
+      {none ? <span className="text-muted-foreground">No certificate</span> : <span className="rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[12px]">{cert}</span>}
+      {huid && <span className="rounded-md border border-gold/60 bg-gold-light px-1.5 py-0.5 font-mono text-[12px]">HUID {huid}</span>}
+    </span>
+  );
+}
+
 export function Grid({ head, rows, num = [], onRow, sel }: { head: string[]; rows: ReactNode[][]; num?: number[]; onRow?: (i: number) => void; sel?: number }) {
   return (
     <Table head={head} num={num}>

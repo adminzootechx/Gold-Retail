@@ -1,11 +1,11 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useDetail } from "../lib/detail";
 import { useStore } from "../lib/store";
 import { receiveItem, transferItem } from "../lib/actions2";
 import { g, inr } from "../lib/calc";
 import { Btn, Card, Field, PageHeader, StatusBadge, STATUS_LABEL, Tabs, inputCls } from "../components/ui";
-import { FormCard, Grid, Kpis, Pill } from "../components/kit";
+import { CertBadge, FormCard, Grid, Kpis, Pill } from "../components/kit";
 import type { Status } from "../lib/data";
 
 const STATUSES: Status[] = ["InStock", "Reserved", "InTransit", "OnConsignment", "Sold", "InRepair", "AtHallmark"];
@@ -15,7 +15,7 @@ const days = (tag: string) => 5 + ([...tag].reduce((a, c) => a + c.charCodeAt(0)
 
 export default function Inventory() {
   const { s, act } = useStore();
-  const router = useRouter();
+  const detail = useDetail();
   const [tab, setTab] = useState<Tab>("register");
   const [status, setStatus] = useState("");
   const [loc, setLoc] = useState("");
@@ -55,8 +55,8 @@ export default function Inventory() {
 
       {tab === "register" && (
         <Grid head={["Tag", "Piece", "Variant", "Net metal", "HUID", "Certificate", "Location", "Status", "Price"]} num={[3, 8]}
-          onRow={(i) => router.push("/trace?tag=" + rows[i].tag)}
-          rows={rows.map((i) => [<span key="t" className="font-mono text-[12.5px]">{i.tag}</span>, i.name, i.variant, g(i.net), <span key="h" className="font-mono text-[12.5px]">{i.huid}</span>, i.cert, i.loc, <StatusBadge key="s" status={i.status} />, inr(i.price)])} />
+          onRow={(i) => detail.open({ kind: "piece", id: rows[i].tag })}
+          rows={rows.map((i) => [<span key="t" className="font-mono text-[12.5px]">{i.tag}</span>, i.name, i.variant, g(i.net), <CertBadge key="h" huid={i.huid} />, <CertBadge key="c" cert={i.cert} />, i.loc, <StatusBadge key="s" status={i.status} />, inr(i.price)])} />
       )}
 
       {tab === "locations" && (

@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   BarChart3, ChevronDown, Boxes, ClipboardList, Gem, Globe, Hammer, Handshake, Landmark, House,
-  Bell, ChevronLeft, ChevronRight, Menu, Package, PackageCheck, PenTool, Play, Receipt, ScrollText, Search, ShieldCheck, ShoppingCart, Store, Users, Wrench, type LucideIcon,
+  ArrowDownRight, ArrowUpRight, Bell, ChevronLeft, ChevronRight, Menu, Package, PackageCheck, PenTool, Play, Receipt, ScrollText, Search, ShieldCheck, ShoppingCart, Store, Users, Wrench, type LucideIcon,
 } from "lucide-react";
 import { useStore } from "../lib/store";
 import { ALL_MODS, MODS, TOP, allowed, firstAllowed } from "../lib/modules";
@@ -13,7 +13,12 @@ import { findPiece } from "../lib/search";
 import { applyPrefs, usePrefs } from "../lib/prefs";
 import AccountMenu from "./AccountMenu";
 import NotificationDrawer from "./NotificationDrawer";
+import DetailPanel from "./DetailPanel";
+import CommandPalette from "./CommandPalette";
+import { DetailCtx, type Detail } from "../lib/detail";
 import { todos } from "../lib/home";
+import { rateChange } from "../lib/retail";
+import { ofKind } from "../lib/records";
 import { cx } from "./ui";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -34,6 +39,8 @@ export default function Frame({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { s, ready, toast, act, undo } = useStore();
   const [notes, setNotes] = useState(false);
+  const [detail, setDetail] = useState<Detail | null>(null);
+  const [palette, setPalette] = useState(false);
   const [shown, setShown] = useState("");
   const prefs = usePrefs();
   const [collapsed, setCollapsed] = useState(false);
@@ -42,6 +49,7 @@ export default function Frame({ children }: { children: React.ReactNode }) {
   const login = path === "/login";
   const find = useRef<HTMLInputElement>(null);
   const count = todos(s, s.role).length;
+  const rate = rateChange(ofKind(s.records, "rate"));
   const here = ALL_MODS.find((m) => m[0] === path)?.[1] ?? (path === "/" ? "Home" : path === "/account" ? "Account settings" : path === "/preferences" ? "Preferences" : "");
   const rail = (cls: string) => cx(collapsed && "lg:hidden", !open && "md:max-lg:hidden", cls);
   const ok = s.authed && allowed(s.role, path);
@@ -51,7 +59,7 @@ export default function Frame({ children }: { children: React.ReactNode }) {
   useEffect(() => { if (path === "/") find.current?.focus(); }, [path, ready]);
 
   useEffect(() => {
-    const k = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); find.current?.focus(); } };
+    const k = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette((v) => !v); } };
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
   }, []);
@@ -153,6 +161,7 @@ export default function Frame({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="no-print border-t border-white/10 p-2.5"><AccountMenu dark labelCls={rail("")} /></div>
       </aside>
+      <DetailCtx.Provider value={{ open: setDetail }}>
       <div className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-white md:m-3 md:ml-0 md:rounded-[28px] md:shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_12px_40px_rgba(0,0,0,0.45)]">
         <header className="no-print flex h-16 flex-none items-center gap-3 border-b border-border bg-card px-4 md:px-6">
           <button className={cx(control, "inline-flex w-10 flex-none items-center justify-center hover:bg-muted pointer-coarse:w-11 lg:hidden")} onClick={() => setOpen(!open)} aria-label="Open menu" aria-expanded={open}>
@@ -166,7 +175,14 @@ export default function Frame({ children }: { children: React.ReactNode }) {
               className={cx(control, "w-full bg-background pl-9 pr-14 outline-none focus:border-gold focus:ring-[3px] focus:ring-gold/20")} />
             <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md border border-border bg-card px-1.5 py-0.5 font-sans text-[11px] text-muted-foreground">Ctrl K</kbd>
           </div>
-          <span className="ml-auto hidden whitespace-nowrap text-sm text-muted-foreground xl:block">24K <b className="tabular-nums text-foreground">{inr(RATE24)}</b>/g</span>
+          <Link href="/finance" title="Gold rate" className="ml-auto hidden min-h-10 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 text-sm text-muted-foreground hover:bg-muted md:flex">
+            24K <b className="tabular-nums text-foreground">{inr(RATE24)}</b>/g
+            {rate.diff !== null && rate.diff !== 0 && (
+              <span className={cx("inline-flex items-center font-semibold", rate.diff > 0 ? "text-success" : "text-danger")}>
+                {rate.diff > 0 ? <ArrowUpRight className="size-3.5" aria-hidden /> : <ArrowDownRight className="size-3.5" aria-hidden />}{inr(Math.abs(rate.diff))}
+              </span>
+            )}
+          </Link>
           <button type="button" onClick={() => setNotes(true)} aria-haspopup="dialog" aria-label={count ? `Notifications, ${count} waiting` : "Notifications"} className={cx(control, "relative ml-auto inline-flex w-10 flex-none items-center justify-center hover:bg-muted pointer-coarse:w-11 sm:ml-0")}>
             <Bell className="size-4" aria-hidden />
             {count > 0 && <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-danger px-1 text-[11px] font-bold leading-5 text-white">{count}</span>}
@@ -176,7 +192,10 @@ export default function Frame({ children }: { children: React.ReactNode }) {
           <div className="mx-auto max-w-[1120px]">{children}</div>
         </main>
       </div>
+      </DetailCtx.Provider>
       {open && <button aria-label="Close menu" className="fixed inset-0 z-30 bg-black/30 lg:hidden" onClick={() => setOpen(false)} />}
+      <CommandPalette open={palette} onClose={() => setPalette(false)} onNotifications={() => setNotes(true)} />
+      <DetailPanel detail={detail} onClose={() => setDetail(null)} onOpen={setDetail} />
       <NotificationDrawer open={notes} onClose={() => setNotes(false)} />
       {Toast}
     </div>
