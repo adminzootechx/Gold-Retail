@@ -62,7 +62,7 @@ export default function FilesCard({ folder, title }: { folder: string; title: st
         <ul className="flex flex-col gap-1.5">
           {rows.map((f) => (
             <li key={f.key} className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-1.5">
-              <span className="min-w-0 truncate">{f.name} <span className="text-muted-foreground">{kb(f.size)}</span></span>
+              <span className="min-w-0 break-all">{f.name} <span className="text-muted-foreground">{kb(f.size)}</span></span>
               <span className="flex flex-none gap-1.5"><Btn sm onClick={() => open(f.key)}>Open</Btn><Btn sm onClick={() => remove(f.key)}>Remove</Btn></span>
             </li>
           ))}

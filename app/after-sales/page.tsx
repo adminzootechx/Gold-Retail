@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
+import Link from "../components/Go";
 import { useStore } from "../lib/store";
 import { REPAIR_STEPS, repairNext, submitExchange } from "../lib/actions";
 import { exchange, inr } from "../lib/calc";

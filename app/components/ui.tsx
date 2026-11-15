@@ -144,7 +144,7 @@ export function Bars({ data, fmt = (v: number) => String(v) }: { data: [string, 
     <div>
       {data.map(([l, v]) => (
         <div key={l} className="my-1.5 grid grid-cols-[130px_1fr_52px] items-center gap-2.5 text-[12.5px]">
-          <span className="truncate">{l}</span>
+          <span className="break-words">{l}</span>
           <div className="h-2.5 overflow-hidden rounded-full bg-muted"><i className="block h-full rounded-full bg-gold" style={{ width: Math.round((v / max) * 100) + "%" }} /></div>
           <b className="text-right tabular-nums">{fmt(v)}</b>
         </div>

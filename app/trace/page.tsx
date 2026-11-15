@@ -1,6 +1,6 @@
 "use client";
 import { Suspense } from "react";
-import Link from "next/link";
+import Link from "../components/Go";
 import { useSearchParams } from "next/navigation";
 import { useStore } from "../lib/store";
 import { ct, g, inr, PUR } from "../lib/calc";

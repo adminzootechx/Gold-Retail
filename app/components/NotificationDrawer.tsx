@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "./Go";
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { useStore } from "../lib/store";
@@ -33,7 +33,7 @@ export default function NotificationDrawer({ open, onClose }: { open: boolean; o
           <h2 className="text-lg font-semibold">Notifications</h2>
           <button ref={close} type="button" onClick={onClose} aria-label="Close" className="grid size-10 place-items-center rounded-lg hover:bg-muted pointer-coarse:size-11"><X className="size-5" aria-hidden /></button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="sleek-scroll sleek-scroll-light min-h-0 flex-1 overflow-y-auto">
           <h3 className="px-6 pb-2 pt-5 text-sm font-semibold text-muted-foreground">Needs you ({items.length})</h3>
           {items.length ? (
             <ul className="m-0 list-none divide-y divide-border/60 p-0">

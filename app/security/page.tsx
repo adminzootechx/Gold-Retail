@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useStore } from "../lib/store";
-import { MODS, ROLES, allowed } from "../lib/modules";
+import { ALL_MODS, ROLES, allowed } from "../lib/modules";
 import { Btn, Field, PageHeader, Tabs, inputCls } from "../components/ui";
 import { Grid, Pill } from "../components/kit";
 import { USERS } from "../lib/mock";
@@ -19,7 +19,7 @@ export default function Security() {
   const [edits, setEdits] = useState<Record<string, string>>({});
   const limitOf = (id: string, saved: string) => edits[id] ?? saved;
   const roles = Object.keys(ROLES) as Role[];
-  const mods = MODS.flatMap(([, m]) => m);
+  const mods = ALL_MODS;
   const users = [...new Set(s.log.map((l) => l.u))];
 
   return (

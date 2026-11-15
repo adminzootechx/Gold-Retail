@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "./Go";
 import { Activity, Boxes, ClipboardList, Gem, Store, TrendingUp, Users, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge, Btn, Card, Field, Table, Tr, cx, inputCls, type Kind } from "./ui";
@@ -45,7 +45,7 @@ export function Tile({ label, value, note, alert, href }: { label: string; value
       {note && <span className="mt-1 block text-sm text-muted-foreground">{note}</span>}
     </>
   );
-  const cls = "block min-w-0 rounded-2xl border border-border bg-card p-5";
+  const cls = "block min-w-0 rounded-2xl border border-border bg-card p-5 transition-colors duration-150";
   return href ? <Link href={href} className={cx(cls, "hover:border-primary/40")}>{body}</Link> : <div className={cls}>{body}</div>;
 }
 

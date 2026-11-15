@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "./Go";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { ChevronRight, ScanLine } from "lucide-react";

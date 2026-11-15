@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
+import Link from "../components/Go";
 import { useStore } from "../lib/store";
 import { INWARD_STEPS, inwardStep, inwardTag } from "../lib/actions";
 import { linkCert, receiveHallmark, receivePieces, sendHallmark } from "../lib/actions3";

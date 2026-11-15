@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "./components/Go";
 import { useStore } from "./lib/store";
 import { g, inr, jcCalc } from "./lib/calc";
 import { STORE_TARGET, VENDOR_SELF, goldWhere, pipeline, revenueNow, salesMonth, salesToday, todos } from "./lib/home";

@@ -11,7 +11,7 @@
   --primary: #043544;
   --gold: #d0a038;
   --gold-fg: #043544;
-  --frame: #1b1c1e;
+  --frame: #000000;
   --gold-dark: #a37a14;
   --gold-light: #faf3df;
   --gold-mid: #e3be6a;
@@ -31,8 +31,8 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-jakarta), system-ui, sans-serif;
-  --font-display: var(--font-schibsted), var(--font-jakarta), system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-inter), system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -70,14 +70,18 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-jakarta), system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
   font-size: 14px;
-  line-height: 1.5;
+  font-weight: 450;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  font-feature-settings: "cv11", "ss03";
 }
 
 h1, h2, h3 { text-wrap: balance;
-  font-family: var(--font-schibsted), var(--font-jakarta), system-ui, sans-serif;
-  letter-spacing: -0.01em;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-weight: 650;
+  letter-spacing: -0.015em;
 }
 
 p, li, dd { text-wrap: pretty; }
@@ -87,7 +91,7 @@ p, li, dd { text-wrap: pretty; }
   outline-offset: 2px;
 }
 
-input, select, button { font: inherit; }
+@layer base { input, select, button { font: inherit; } }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 
@@ -118,3 +122,19 @@ button:has(> code), td button, input, select, textarea, option { text-transform:
 @keyframes drawer-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 .drawer-in { animation: drawer-in 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
 @media (prefers-reduced-motion: reduce) { .drawer-in { animation: none; } }
+
+/* Slim scrollbars that stay out of the way: a thin rounded thumb that shows on hover. */
+.sleek-scroll { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+.sleek-scroll:hover, .sleek-scroll:focus-within { scrollbar-color: rgba(255, 255, 255, 0.28) transparent; }
+.sleek-scroll-light:hover, .sleek-scroll-light:focus-within { scrollbar-color: rgba(27, 28, 30, 0.28) transparent; }
+.sleek-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.sleek-scroll::-webkit-scrollbar-track { background: transparent; }
+.sleek-scroll::-webkit-scrollbar-thumb { background: transparent; border-radius: 999px; }
+.sleek-scroll:hover::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.28); }
+.sleek-scroll-light:hover::-webkit-scrollbar-thumb { background: rgba(27, 28, 30, 0.28); }
+
+/* Switching dashboard view: the new view settles in so the change reads as one continuous surface. */
+@keyframes view-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.view-in { animation: view-in 0.26s cubic-bezier(0.16, 1, 0.3, 1); }
+@media (prefers-reduced-motion: reduce) { .view-in { animation: view-fade 0.15s linear; } }
+@keyframes view-fade { from { opacity: 0; } to { opacity: 1; } }

@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useStore } from "../lib/store";
-import { MODS, allowed } from "../lib/modules";
+import { ALL_MODS, allowed } from "../lib/modules";
 import { profileFor } from "../lib/prefs";
 import { saveProfile } from "../lib/actions3";
 import { Btn, Card, PageHeader, Rec } from "../components/ui";
@@ -11,7 +11,7 @@ export default function Account() {
   const { s, act, signOut } = useStore();
   const router = useRouter();
   const me = profileFor(s.role, s.records);
-  const screens = MODS.flatMap(([, mods]) => mods).filter((m) => allowed(s.role, m[0])).map((m) => m[1]);
+  const screens = ALL_MODS.filter((m) => allowed(s.role, m[0])).map((m) => m[1]);
 
   return (
     <>

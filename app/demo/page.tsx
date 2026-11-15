@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "../components/Go";
 import { useState } from "react";
 import { useStore } from "../lib/store";
 import { Btn, Card, PageHeader } from "../components/ui";

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
+import Link from "../components/Go";
 import { useStore } from "../lib/store";
 import { createJobCard } from "../lib/actions2";
 import { PUR, g, inr } from "../lib/calc";

@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "./Go";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, LogOut, Settings, SlidersHorizontal } from "lucide-react";
@@ -36,7 +36,7 @@ export default function AccountMenu({ dark = false, labelCls = "hidden md:block"
         className={cx("flex items-center gap-2 rounded-xl pl-1.5 pr-2 pointer-coarse:h-12", dark ? "h-12 w-full text-white hover:bg-white/10" : "h-10 border border-border hover:bg-muted")}>
         <span className="grid size-8 flex-none place-items-center rounded-full bg-gold text-xs font-bold text-gold-fg">{initials}</span>
         <span className={cx("min-w-0 flex-1 text-left leading-tight", labelCls)}>
-          <b className="block max-w-[140px] truncate text-[13px]">{me.name}</b>
+          <b className="block break-words text-[13px]">{me.name}</b>
           <small className={cx("block text-xs", dark ? "text-white/60" : "text-muted-foreground")}>{s.role === "Vendor (portal)" ? "Vendor" : s.role}</small>
         </span>
         <ChevronDown className={cx("size-4 flex-none", dark ? "text-white/60 " + labelCls : "text-muted-foreground")} aria-hidden />
