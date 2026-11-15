@@ -3,31 +3,42 @@ import Link from "./Go";
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { useStore } from "../lib/store";
-import { decide } from "../lib/actions";
 import { todos, type Level } from "../lib/home";
-import { Badge, Btn, cx, type Kind } from "./ui";
+import { Badge, cx, type Kind } from "./ui";
+import { DecideButtons } from "./Home";
 
 const LEVEL: Record<Level, [string, Kind]> = { blocked: ["Blocked", "bad"], decision: ["Decision", "warn"], todo: ["To do", "info"] };
 
 /** Notifications slide in from the right edge: what needs this person, then what just happened. */
 export default function NotificationDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { s, act } = useStore();
+  const { s } = useStore();
   const items = todos(s, s.role);
   const close = useRef<HTMLButtonElement>(null);
 
+  const panel = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!open) return;
-    close.current?.focus();
-    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", esc);
-    return () => document.removeEventListener("keydown", esc);
+    const from = document.activeElement as HTMLElement | null;
+    // The panel turns visible as it starts to slide, so focus moves a moment later.
+    const t = setTimeout(() => close.current?.focus(), 60);
+    const keys = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key !== "Tab" || !panel.current) return;
+      const f = [...panel.current.querySelectorAll<HTMLElement>('a, button, [tabindex]:not([tabindex="-1"])')].filter((x) => x.offsetParent !== null);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", keys);
+    return () => { clearTimeout(t); document.removeEventListener("keydown", keys); from?.focus(); };
   }, [open, onClose]);
 
   return (
     <>
       <button type="button" aria-label="Close notifications" tabIndex={-1} onClick={onClose}
         className={cx("no-print fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 motion-reduce:transition-none", open ? "opacity-100" : "pointer-events-none opacity-0")} />
-      <aside role="dialog" aria-label="Notifications" aria-hidden={!open} inert={!open}
+      <aside ref={panel} role="dialog" aria-modal="true" aria-label="Notifications" aria-hidden={!open} inert={!open}
         className={cx("no-print fixed inset-y-0 right-0 z-50 flex w-[420px] max-w-full flex-col bg-white shadow-[-12px_0_40px_rgba(0,0,0,0.25)] transition-[transform,visibility] duration-300 ease-out motion-reduce:transition-none", open ? "visible translate-x-0" : "invisible translate-x-full")}>
         <div className="flex h-16 flex-none items-center justify-between border-b border-border px-6">
           <h2 className="text-lg font-semibold">Notifications</h2>
@@ -43,10 +54,7 @@ export default function NotificationDrawer({ open, onClose }: { open: boolean; o
                   <p className="font-medium leading-snug">{t.what}</p>
                   <p className="mb-3 text-sm text-muted-foreground">{t.meta}</p>
                   {t.decide ? (
-                    <div className="flex gap-3">
-                      <Btn gold sm onClick={() => act((d) => decide(d, t.decide!, "approved"), { undoable: true })}>Approve</Btn>
-                      <Btn sm className="border-transparent bg-transparent text-muted-foreground hover:bg-muted" onClick={() => act((d) => decide(d, t.decide!, "rejected"), { undoable: true })}>Reject</Btn>
-                    </div>
+                    <DecideButtons id={t.decide} label={t.what} />
                   ) : (
                     <Link href={t.href} onClick={onClose} className="inline-flex min-h-10 items-center rounded-lg border border-border px-3.5 text-sm font-semibold hover:bg-muted">{t.cta}</Link>
                   )}

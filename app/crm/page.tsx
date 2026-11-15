@@ -28,7 +28,7 @@ export default function Crm() {
 
   return (
     <>
-      <PageHeader title="CRM and marketing" sub="Customer 360, segments and campaigns over WhatsApp, email and SMS." />
+      <PageHeader title="CRM" sub="Customers, segments and campaigns." />
       <Tabs<Tab> tabs={[["customers", "Customers"], ["segments", "Segments"], ["campaign", "Campaign builder"], ["log", "Message log"]]} value={tab} onChange={setTab} />
 
       {tab === "customers" && (
@@ -57,7 +57,7 @@ export default function Crm() {
             { id: "segment", label: "Segment", type: "select", options: SEGMENTS.map(([n]) => n) },
             { id: "text", label: "Message", type: "textarea", value: "A small thank-you from AKOIRAH. Visit us this month for a private viewing." },
           ]} onSubmit={(v) => { act((d) => sendCampaign(d, v.channel as "WhatsApp" | "Email" | "SMS", v.segment, v.text, count(v.segment))); setTab("log"); }} />
-          <Card title="How sending works"><p className="text-muted-foreground">Messages go through the shared notification adapters, the same ones used for order updates. In this prototype nothing is actually sent.</p></Card>
+          <p className="text-muted-foreground">Messages are logged here and not sent yet.</p>
         </div>
       )}
 

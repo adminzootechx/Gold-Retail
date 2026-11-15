@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, KeyboardEvent, ReactNode } from "react";
 import type { Status } from "../lib/data";
 
 export const cx = (...a: (string | false | undefined | null)[]) => a.filter(Boolean).join(" ");
@@ -38,7 +38,7 @@ export function PageHeader({ title, sub, children }: { title: ReactNode; sub?: R
 
 export function Card({ title, children, className }: { title?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <div className={cx("min-w-0 rounded-2xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(4,53,68,0.04)]", className)}>
+    <div className={cx("min-w-0 rounded-2xl border border-border bg-card p-6", className)}>
       {title && <h2 className="mb-4 text-lg font-semibold">{title}</h2>}
       {children}
     </div>
@@ -52,7 +52,7 @@ export function Btn({ gold, sm, className, ...p }: ButtonHTMLAttributes<HTMLButt
       className={cx(
         "rounded-lg border font-semibold transition disabled:opacity-45",
         "inline-flex items-center justify-center pointer-coarse:min-h-11",
-        sm ? "min-h-9 px-3 text-[13px]" : "min-h-10 px-4 text-sm",
+        sm ? "min-h-10 px-3 text-[13px]" : "min-h-10 px-4 text-sm",
         gold ? "border-gold bg-gold text-gold-fg enabled:hover:brightness-110" : "border-border bg-card enabled:hover:bg-muted",
         className,
       )}
@@ -106,11 +106,23 @@ export function Rec({ rows }: { rows: [string, ReactNode, boolean?][] }) {
   );
 }
 
+/** Arrow keys, Home and End move between the tabs of a tab list, as screen-reader users expect. */
+export function tabKeys(e: KeyboardEvent<HTMLElement>) {
+  const keys = ["ArrowRight", "ArrowLeft", "Home", "End"];
+  if (!keys.includes(e.key)) return;
+  const tabs = [...(e.currentTarget.closest('[role="tablist"]')?.querySelectorAll<HTMLElement>('[role="tab"]') ?? [])];
+  const at = tabs.indexOf(e.currentTarget);
+  const to = e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : (at + (e.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+  e.preventDefault();
+  tabs[to]?.focus();
+  tabs[to]?.click();
+}
+
 export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: [T, string][]; value: T; onChange: (v: T) => void }) {
   return (
     <div className="mb-4 flex gap-1 overflow-x-auto border-b border-border" role="tablist">
       {tabs.map(([k, l]) => (
-        <button key={k} role="tab" aria-selected={value === k} onClick={() => onChange(k)}
+        <button key={k} role="tab" aria-selected={value === k} tabIndex={value === k ? 0 : -1} onKeyDown={tabKeys} onClick={() => onChange(k)}
           className={cx("-mb-px min-h-10 border-b-2 px-3.5 py-2 font-semibold pointer-coarse:min-h-11", value === k ? "border-gold text-primary" : "border-transparent text-muted-foreground")}>{l}</button>
       ))}
     </div>

@@ -26,7 +26,7 @@ export default function Finance() {
 
   return (
     <>
-      <PageHeader title="Finance and accounts" sub="Daily gold rate, receivables and payables, vendor ledger, vouchers, credit notes and the day book." />
+      <PageHeader title="Finance" sub="Gold rate, ledgers, vouchers and the day book." />
       <Tabs<Tab> tabs={[["rate", "Gold rate"], ["ar", "Receivables"], ["ap", "Payables"], ["ledger", "Vendor ledger"], ["voucher", "Receipts and payments"], ["credit", "Credit notes"], ["daybook", "Day book"]]} value={tab} onChange={setTab} />
 
       {tab === "rate" && (

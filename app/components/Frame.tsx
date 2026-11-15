@@ -76,7 +76,7 @@ export default function Frame({ children }: { children: React.ReactNode }) {
   const search = (v: string) => {
     const it = findPiece(s.items, v);
     if (it) router.push("/trace?tag=" + it.tag);
-    else if (v.trim()) act(() => "Nothing found for " + v);
+    else if (v.trim()) { act(() => `Nothing found for ${v.trim()}. Check the tag, HUID, certificate or order number.`); find.current?.select(); }
   };
 
   return (
@@ -141,7 +141,7 @@ export default function Frame({ children }: { children: React.ReactNode }) {
                   const on = path === href;
                   return (
                     <Link key={href} href={href} onClick={() => setOpen(false)} title={label} aria-current={on ? "page" : undefined}
-                      className={cx("flex min-h-9 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-normal text-white/60 hover:bg-white/10 hover:text-white pointer-coarse:min-h-11", collapsed && "lg:justify-center", !open && "md:max-lg:justify-center", on && "bg-white/15 font-medium text-white relative before:absolute before:-left-2.5 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-white")}>
+                      className={cx("flex min-h-10 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-normal text-white/60 hover:bg-white/10 hover:text-white pointer-coarse:min-h-11", collapsed && "lg:justify-center", !open && "md:max-lg:justify-center", on && "bg-white/15 font-medium text-white relative before:absolute before:-left-2.5 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-white")}>
                       <span className={rail("whitespace-nowrap")}>{label}</span>
                     </Link>
                   );

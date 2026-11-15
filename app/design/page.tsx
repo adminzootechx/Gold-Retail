@@ -24,7 +24,7 @@ export default function DesignPage() {
 
   return (
     <>
-      <PageHeader title="Product development" sub="Design to SKU. A SKU can only be created from a locked final CAD." />
+      <PageHeader title="Product design" sub="Design to SKU, from a locked final CAD." />
       <Tabs<Tab> tabs={[["board", "Design board"], ["cad", "CAD versions"], ["rpt", "RPT tracker"], ["new", "New design request"]]} value={tab} onChange={setTab} />
 
       {tab === "board" && (

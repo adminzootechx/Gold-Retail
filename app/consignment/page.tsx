@@ -20,7 +20,7 @@ export default function Consignment() {
 
   return (
     <>
-      <PageHeader title="Consignment" sub="Sent stock stays on AKOIRAH's books at the partner. Received stock is held, never valued as own stock." />
+      <PageHeader title="Consignment" sub="Sent stock stays on our books. Received stock is only held." />
       <Kpis items={[["Memos open", String(s.memos.filter((m) => m.state === "Out").length)], ["Pieces out at partners", String(out.length)], ["Value out", inr(out.reduce((a, i) => a + i.price, 0))], ["Held for others", String(s.memos.filter((m) => m.dir === "Received" && m.state === "Out").reduce((a, m) => a + m.tags.length, 0))]]} />
       <Tabs<Tab> tabs={[["memos", "All memos"], ["sent", "New memo, sent"], ["received", "New memo, received"], ["stock", "Partner stock"], ["settle", "Settlement"]]} value={tab} onChange={setTab} />
 
@@ -45,7 +45,7 @@ export default function Consignment() {
             </div>
             <Btn gold disabled={!picked.length} onClick={() => { act((d) => issueMemo(d, party, picked)); setPicked([]); setTab("memos"); }}>Issue memo for {picked.length} piece(s)</Btn>
           </Card>
-          <Card title="What happens"><p className="text-muted-foreground">Issued pieces move to the partner location with the status On consignment. They are no longer offered to online orders. When the partner sells, an invoice and settlement follow. Unsold pieces come back through QC.</p></Card>
+          <p className="text-muted-foreground">Issued pieces leave for the partner and are no longer offered online. A sale raises an invoice. Unsold pieces return through QC.</p>
         </div>
       )}
 

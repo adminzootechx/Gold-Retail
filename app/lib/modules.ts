@@ -4,7 +4,7 @@ import type { Role } from "./data";
 export type Mod = readonly [href: string, label: string, num: string];
 /** The screens people use all day. They sit in the sidebar as their own tiles. */
 export const TOP: ReadonlyArray<Mod> = [
-  ["/dashboards", "Dashboards", "17"], ["/inventory", "Inventory", "8"], ["/sales", "Sales orders", "9"], ["/stores", "Store operations", "10"], ["/approvals", "Approvals", "19"],
+  ["/inventory", "Inventory", "8"], ["/sales", "Sales orders", "9"], ["/stores", "Store operations", "10"], ["/approvals", "Approvals", "19"],
 ];
 
 /** Everything else, grouped by the work it belongs to. */

@@ -37,7 +37,7 @@ function Trace() {
   if (!it) {
     return (
       <>
-        <PageHeader title="Trace a piece" sub="Search a tag, HUID, certificate number or order in the top bar, or pick one." />
+        <PageHeader title="Trace a piece" sub="Search a tag, HUID, certificate or order." />
         <Card><div className="flex flex-wrap gap-2">
           {s.items.slice(0, 6).map((i) => <Link key={i.tag} href={"/trace?tag=" + i.tag} className="rounded-lg border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted">{i.tag}</Link>)}
         </div></Card>

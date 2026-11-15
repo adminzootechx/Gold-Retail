@@ -39,7 +39,7 @@ export function Tile({ label, value, note, alert, href }: { label: string; value
     <>
       <div className="flex items-start justify-between gap-3">
         <span className="text-sm text-muted-foreground">{label}</span>
-        <span className="grid size-9 flex-none place-items-center rounded-full bg-muted text-primary">{kpiIcon(label)}</span>
+        <span className="grid size-9 flex-none place-items-center rounded-full bg-gold-light text-primary">{kpiIcon(label)}</span>
       </div>
       <b className={cx("mt-2 block font-sans text-[1.9rem] font-semibold leading-tight tabular-nums", alert && "text-danger")}>{value}</b>
       {note && <span className="mt-1 block text-sm text-muted-foreground">{note}</span>}

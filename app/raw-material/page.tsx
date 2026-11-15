@@ -25,7 +25,7 @@ export default function RawMaterial() {
 
   return (
     <>
-      <PageHeader title="Raw material" sub="Metal by lot, certified stones one by one, melee by lot, findings and packaging." />
+      <PageHeader title="Raw material" sub="Metal, stones, findings and packaging." />
       <Kpis items={[["Fine gold in vault", g(fine), `${s.lots.length} lots`], ["Certified stones", String(SINGLES.length), "tracked one by one"], ["Melee lots", String(MELEE.length), "tracked by weight and pieces"], ["Below reorder level", String(reorder.length)]]} />
       <Tabs<Tab> tabs={[["metal", "Metal vault"], ["stones", "Stone register"], ["findings", "Findings"], ["packaging", "Packaging"], ["reserved", "Reservations"], ["reorder", "Reorder alerts"]]} value={tab} onChange={setTab} />
 

@@ -29,7 +29,7 @@ export default function Procurement() {
 
   return (
     <>
-      <PageHeader title="Procurement" sub="Purchase request, PO, goods receipt with weighing, inward QC and bill matching." />
+      <PageHeader title="Procurement" sub="Request, order, receive, QC and bill match." />
       <Tabs<Tab> tabs={[["pr", "Purchase requests"], ["po", "Purchase orders"], ["grn", "GRN and weighing"], ["qc", "Inward QC"], ["bill", "Bill match"]]} value={tab} onChange={setTab} />
 
       {tab === "pr" && (

@@ -8,7 +8,7 @@ export default function Approvals() {
   const { s, act } = useStore();
   return (
     <>
-      <PageHeader title="Approvals" sub="Anything above its limit waits here. Nobody approves their own request." />
+      <PageHeader title="Approvals" sub="Requests above their limit wait here." />
       <Table head={["Request", "Type", "Reference", "Raised by", "Detail", "Value", "Decision"]} num={[5]}>
         {s.approvals.map((a) => (
           <Tr key={a.id} num={[5]} cells={[

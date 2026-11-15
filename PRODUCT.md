@@ -35,25 +35,29 @@ Every gram of gold, every stone, certificate, HUID, SKU, order and movement is t
 - A finished piece gets a tag only after stone-to-certificate matching, QC, hallmark (HUID) with re-weigh, and any IGI or SGL report.
 - Pieces are identified by a Code 128 barcode and a QR on an 80 x 50 mm tag; scanners type the tag and press Enter.
 - Approvals gate CAD locks, large purchases, discounts over 10%, refunds and variances; nobody approves their own request.
-- Data lives in Neon Postgres, files in Neon Object Storage; deployment target is Vercel.
+- Data lives in Neon Postgres, files in Neon Object Storage. Deployment target is Vercel under the `adminzootechx` account; nothing is deployed yet and that account is not signed in on the development machine.
+- Source is pushed to https://github.com/adminzootechx/Gold-Retail (`main`), committed as adminzootechx.
 
 ## Capabilities and Constraints
 
 - Existing codebase: Next.js 16 App Router, React 19, TypeScript, Tailwind v4, lucide-react, recharts, shares conventions with the gold ERP at `D:\ZooTechX\golddddd`.
-- All 20 modules have screens; some figures are static samples (vendor scorecards, payables, users, approval limits, parts of finance and manufacturing).
+- All 20 modules have screens, and the main flows change stored data: design to SKU, job cards, HO inward and tagging, POS and online orders, transfers, consignment, after-sales. Forms that used to be display-only (BOM, pricing, certificate rules, goods receipts, material slips, vouchers, gold rate, walk-ins, approval rules, requests, profile) now save versioned records that carry through to stock, gold lots, receivables and the dashboards.
+- Still sample or static: manufacturing cycle times, the user list, vendor city and rating, the opening supplier bills, and approval-limit defaults.
+- Not built: real authentication (sign-in is a role picker and the data endpoints are open), WhatsApp, email and SMS sending, per-stage customer notifications, payment gateway, GST filing and ledger postings, and live multi-user updates.
 - Light theme only.
 - Undecided with the client: real gold-rate source, wastage allowances, GST treatment, exchange and refund policy values, approval thresholds, number of stores, whether a vendor portal and a customer storefront are in scope.
 
 ## Brand Commitments
 
 - Name: AKOIRAH. Tagline in use: "Lab-grown diamond jewellery".
-- The look follows the Jewelrex gold ERP reference (https://golddddd-eight.vercel.app/) and is light only; the user asked for this directly.
-- Plain, direct wording; sentence case.
+- Palette: teal #043544 for text and primary, gold #d0a038 for fills and accents (the user specified both colours and asked for them to be binding). Light theme only.
+- Plain, direct wording.
 
 ## Evidence on Hand
 
 - The functional blueprint document and the implementation plan artifact.
-- Sample data only: seeded products, pieces, customers and invoices. No real client data, real certificates, real hallmark numbers or real prices exist yet and none should be invented as fact.
+- Seeded sample data: products, pieces, customers, invoices and supplier bills. No real client data, real certificates, real hallmark numbers or real prices exist yet and none should be invented as fact.
+- Status: a prototype with full working functionality for the core flows, shown to the client on sample data.
 
 ## Product Principles
 
@@ -61,7 +65,7 @@ Every gram of gold, every stone, certificate, HUID, SKU, order and movement is t
 2. Each role starts where its work starts. A home view shows that role's next decisions, not everyone's metrics.
 3. Staff can use it without training. Plain words, one obvious next action, mistakes hard to make and easy to undo.
 4. Built for the floor as well as the desk. Tablet and scanner use are first-class, not afterthoughts.
-5. Say what is a sample. Demo figures are labelled as such; the client must never mistake sample data for their own.
+5. Say what is a sample. Figures that are not computed from stored records are labelled as samples; the client must never mistake sample data for their own.
 
 ## Accessibility & Inclusion
 

@@ -1,16 +1,35 @@
 "use client";
 import Link from "./components/Go";
+import { Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "./lib/store";
 import { g, inr, jcCalc } from "./lib/calc";
 import { STORE_TARGET, VENDOR_SELF, goldWhere, pipeline, revenueNow, salesMonth, salesToday, todos } from "./lib/home";
 import { custName, dayLabel, lakh, plural, receivables, short } from "./lib/stats";
-import { Card, PageHeader } from "./components/ui";
+import { Card, PageHeader, Tabs } from "./components/ui";
 import { Grid, Pill } from "./components/kit";
-import { ActivityFeed, Facts, GoldWhere, NeedsYou, Pipeline } from "./components/Home";
+import { Facts, GoldWhere, NeedsYou, Pipeline } from "./components/Home";
 import type { State } from "./lib/data";
+import Analytics, { ChartView } from "./dashboards/Analytics";
+import { build } from "./dashboards/build";
 
 const both = ["Mumbai Flagship", "Delhi Store"];
 const split = "grid items-start gap-8 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]";
+
+/** A few charts picked for the role, straight from the analytics views. */
+function Glance({ s, picks }: { s: State; picks: [string, number][] }) {
+  const all = build(s, { months: 6, channel: "All" });
+  const charts = picks.map(([id, i]) => all.find((d) => d.id === id)?.charts[i]).filter((c) => !!c);
+  return (
+    <section aria-labelledby="glance" className="mt-10">
+      <div className="mb-4 flex items-baseline justify-between gap-4">
+        <h2 id="glance" className="text-lg font-semibold">At a glance</h2>
+        <Link href="/?view=analytics" className="inline-flex min-h-10 items-center font-semibold text-primary hover:underline">Open all analytics</Link>
+      </div>
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{charts.map((c) => <ChartView key={c.title} c={c} />)}</div>
+    </section>
+  );
+}
 
 function FounderHome({ s }: { s: State }) {
   const r = revenueNow(s);
@@ -20,18 +39,16 @@ function FounderHome({ s }: { s: State }) {
   return (
     <>
       <Facts items={[
-        { label: "Revenue this month", value: lakh(r.now), note: `Last month closed at ${lakh(r.prevTotal)}`, href: "/dashboards" },
+        { label: "Revenue this month", value: lakh(r.now), note: `Last month closed at ${lakh(r.prevTotal)}`, href: "/?view=analytics&v=sales" },
         { label: "Stock value", value: lakh(live.reduce((a, i) => a + i.price, 0)), note: `${plural(live.length, "piece")} on the books`, href: "/inventory" },
         { label: "Owed to us", value: lakh(owed.reduce((a, v) => a + (v.amount - v.paid), 0)), note: `${plural(owed.length, "unpaid invoice")}`, href: "/finance" },
         { label: "Gold ledger", value: short ? plural(short, "card") + " short" : "Balanced", note: short ? "Job cards that do not reconcile" : "Every received job card reconciles", href: "/job-work", alert: short > 0 },
       ]} />
       <div className={split}>
         <NeedsYou items={todos(s, "Founder")} clear="Nothing needs a decision. Gold reconciles on every received job card and no payment is overdue." />
-        <div className="flex flex-col gap-8">
-          <GoldWhere parts={goldWhere(s)} />
-          <ActivityFeed log={s.log} />
-        </div>
+        <GoldWhere parts={goldWhere(s)} />
       </div>
+      <Glance s={s} picks={[["sales", 0], ["sales", 2], ["ledgers", 0], ["stores", 0], ["inventory", 0], ["customer", 1]]} />
     </>
   );
 }
@@ -53,6 +70,7 @@ function ProductionHome({ s }: { s: State }) {
           </Card>
         </div>
       </div>
+      <Glance s={s} picks={[["production", 0], ["vendor", 0], ["raw", 0]]} />
     </>
   );
 }
@@ -81,6 +99,7 @@ function StoreHome({ s }: { s: State }) {
           </Card>
         </div>
       </div>
+      <Glance s={s} picks={[["stores", 0], ["stores", 1], ["sales", 2]]} />
     </>
   );
 }
@@ -108,15 +127,31 @@ function VendorHome({ s }: { s: State }) {
   );
 }
 
-export default function Home() {
+type View = "today" | "analytics";
+
+function HomeView() {
   const { s } = useStore();
+  const router = useRouter();
+  const q = useSearchParams();
+  const vendor = s.role === "Vendor (portal)";
+  const view: View = !vendor && q.get("view") === "analytics" ? "analytics" : "today";
+  const who = vendor ? VENDOR_SELF : s.role;
   return (
     <>
-      <PageHeader title="Today" sub={`${s.role === "Vendor (portal)" ? VENDOR_SELF : s.role}, ${dayLabel()}`} />
-      {s.role === "Founder" && <FounderHome s={s} />}
-      {s.role === "Production manager" && <ProductionHome s={s} />}
-      {s.role === "Store manager" && <StoreHome s={s} />}
-      {s.role === "Vendor (portal)" && <VendorHome s={s} />}
+      <PageHeader title="Home" sub={`${who}, ${dayLabel()}`} />
+      {!vendor && <Tabs<View> tabs={[["today", "Today"], ["analytics", "Analytics"]]} value={view} onChange={(v) => router.replace(v === "today" ? "/" : "/?view=analytics", { scroll: false })} />}
+      {view === "analytics" ? <Analytics /> : (
+        <>
+          {s.role === "Founder" && <FounderHome s={s} />}
+          {s.role === "Production manager" && <ProductionHome s={s} />}
+          {s.role === "Store manager" && <StoreHome s={s} />}
+          {vendor && <VendorHome s={s} />}
+        </>
+      )}
     </>
   );
+}
+
+export default function Home() {
+  return <Suspense fallback={null}><HomeView /></Suspense>;
 }

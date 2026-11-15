@@ -29,7 +29,7 @@ export default function Planning() {
 
   return (
     <>
-      <PageHeader title="Production planning" sub="Requirement = open orders + minimum stock, less stock on hand and work already at vendors." />
+      <PageHeader title="Planning" sub="Open orders plus minimum stock, less what we have." />
       <Kpis items={[["Variants to make", String(need.length)], ["Pieces to make", String(need.reduce((a, r) => a + r.need, 0))], ["Fine gold needed", g(Math.round(totalGold))], ["Open job cards", String(s.jcs.filter((j) => j.state !== "Closed").length)]]} />
       <Tabs<Tab> tabs={[["mrp", "Demand vs stock"], ["requirement", "Material requirement"], ["allocation", "Vendor allocation"], ["cards", "Create job card"]]} value={tab} onChange={setTab} />
 

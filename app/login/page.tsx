@@ -37,7 +37,7 @@ export default function LoginPage() {
             <button className="h-11 w-full rounded-lg border border-gold bg-gold text-[15px] font-semibold text-gold-fg hover:brightness-110">Sign in</button>
           </form>
           <div className="mt-5 border-t border-[#dfe5e8] pt-4">
-            <small className="text-muted-foreground">Prototype: sign in as a role to see only the screens that role gets.</small>
+            <small className="text-muted-foreground">Demo: sign in as a role to see its screens.</small>
             <div className="mt-2.5 flex flex-wrap gap-2">
               {(Object.keys(ROLES) as Role[]).map((r) => (
                 <button key={r} onClick={() => go(r)} className="rounded-lg border border-[#cfd9dc] bg-white px-3 py-1.5 text-[12.5px] font-semibold hover:bg-[#faf3df]">{r}</button>

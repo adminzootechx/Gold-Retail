@@ -26,7 +26,7 @@ export default function Preferences() {
 
   return (
     <>
-      <PageHeader title="Preferences" sub="How the app looks for you on this device. Changes apply straight away." />
+      <PageHeader title="Preferences" sub="How the app looks on this device." />
       <div className="grid items-start gap-3.5 lg:grid-cols-2">
         <Card title="Display">
           <p className="mb-1.5 font-semibold">Table density</p>

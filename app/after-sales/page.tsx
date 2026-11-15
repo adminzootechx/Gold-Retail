@@ -22,7 +22,7 @@ export default function AfterSales() {
 
   return (
     <>
-      <PageHeader title="Repairs, exchange and refunds" sub={"Every case starts from a tag or invoice and stays on the piece’s history."} />
+      <PageHeader title="After-sales" sub="Every case starts from a tag or invoice." />
       <Tabs<Tab> tabs={[["repairs", "Repairs"], ["exchange", "Lifetime exchange"], ["refunds", "Refunds"], ["credit", "Credit notes"]]} value={tab} onChange={setTab} />
 
       {tab === "repairs" && (

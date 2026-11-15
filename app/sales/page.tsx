@@ -29,7 +29,7 @@ export default function Sales() {
 
   return (
     <>
-      <PageHeader title="Sales orders" sub="One order model for retail, HNI, corporate and online, so reports and after-sales work the same.">
+      <PageHeader title="Sales orders" sub="One order model for every channel.">
         {tab === "orders" && (
           <select aria-label="Channel" className="h-9 rounded-lg border border-border bg-card px-2" value={ch} onChange={(e) => setCh(e.target.value)}>
             <option value="">All channels</option>{["Retail", "HNI", "Corporate", "Online"].map((c) => <option key={c}>{c}</option>)}
@@ -62,7 +62,7 @@ export default function Sales() {
             <Btn gold onClick={() => act((d) => submitDiscount(d, "HNI order HN-209", pct, "on custom tennis bracelet"))}>Submit quote</Btn>
             <p className="mt-2 text-[12.5px] text-muted-foreground">Above 10% needs the founder&apos;s approval. Nobody approves their own request.</p>
           </Card>
-          <Card title="Made to order"><p className="text-muted-foreground">The order line points to a variant and design before any piece exists. A job card is raised once the advance is paid, and the price is locked at the advance.</p></Card>
+          <p className="text-muted-foreground">Made to order: a job card is raised once the advance is paid, and the price is locked then.</p>
         </div>
       )}
 

@@ -16,7 +16,7 @@ const STEPS: { role: string; title: string; href: string; say: string; do: strin
   { role: "Store manager", title: "Online order and the fulfilment engine", href: "/ecommerce", say: "The engine reserves the piece before payment, so two customers cannot buy the same unique piece.", do: "Open WEB-5024 and press Next step. Open WEB-5022: no stock, so it becomes a manufacturing order." },
   { role: "Founder", title: "Trace any piece in seconds", href: "/trace", say: "Search a tag, HUID or certificate and see the gold lot, vendor, stones, hallmark and owner.", do: "Search HU7K2P in the top bar, then show the reverse trace." },
   { role: "Store manager", title: "After-sales that stays on the piece", href: "/after-sales", say: "Repairs, lifetime exchange and refunds all start from the tag and keep the history.", do: "Show the exchange valuation, move the slider, submit for approval." },
-  { role: "Founder", title: "Close on the analytics", href: "/dashboards", say: "Twelve dashboards from the same data. The sale you just made is already in Sales and Store performance.", do: "Open Sales, then Store performance, then export a report as CSV." },
+  { role: "Founder", title: "Close on the analytics", href: "/?view=analytics", say: "Twelve dashboards from the same data. The sale you just made is already in Sales and Store performance.", do: "Open Sales, then Store performance, then export a report as CSV." },
 ];
 
 export default function Demo() {
@@ -26,7 +26,7 @@ export default function Demo() {
 
   return (
     <>
-      <PageHeader title="Demo guide" sub="A walk-through for the client, in order. Switch role from the top bar where the step says so.">
+      <PageHeader title="Demo guide" sub="A walk-through for the client, in order.">
         <Btn disabled={busy} onClick={async () => { setBusy(true); await reset(); setDone([]); setBusy(false); }}>Reset demo data</Btn>
       </PageHeader>
 

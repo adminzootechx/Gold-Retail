@@ -15,7 +15,7 @@ export default function Account() {
 
   return (
     <>
-      <PageHeader title="Account settings" sub="Your profile and what your role can open." />
+      <PageHeader title="Account settings" sub="Profile and access." />
       <div className="grid items-start gap-3.5 lg:grid-cols-2">
         <FormCard title="Profile" cta="Save profile" onSubmit={(v) => act((d) => saveProfile(d, { name: v.name, email: v.email, phone: v.phone }))}
           fields={[{ id: "name", label: "Full name", value: me.name }, { id: "email", label: "Email", type: "email", value: me.email }, { id: "phone", label: "Phone", type: "tel", value: me.phone }]} />

@@ -37,7 +37,7 @@ export default function Inventory() {
 
   return (
     <>
-      <PageHeader title="Inventory" sub="Every piece by tag, across every location. Select a row to see its full trace.">
+      <PageHeader title="Inventory" sub="Every piece, every location. Select a row to trace it.">
         {tab === "register" && (
           <>
             <select aria-label="Status" className={sel} value={status} onChange={(e) => setStatus(e.target.value)}>

@@ -51,7 +51,7 @@ export default function Reports() {
 
   return (
     <>
-      <PageHeader title="Reports" sub="Fifteen reports from the ledger. Filter the rows, then export to CSV.">
+      <PageHeader title="Reports" sub="Fifteen reports. Filter, then export to CSV.">
         <input aria-label="Filter rows" placeholder="Filter rows" value={q} onChange={(e) => setQ(e.target.value)} className="h-9 rounded-lg border border-border bg-card px-3" />
         <Btn gold onClick={download}>Export CSV</Btn>
       </PageHeader>

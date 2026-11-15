@@ -31,7 +31,7 @@ function JobWork() {
 
   return (
     <>
-      <PageHeader title="Vendor job work" sub="Metal and stone accounts per job card, reconciled in fine gold to the milligram." />
+      <PageHeader title="Vendor job work" sub="Gold and stones per job card, to the milligram." />
       <Tabs<Tab> tabs={isVendor ? tabs.filter((t) => t[0] === "cards" || t[0] === "account") : tabs} value={tab} onChange={setTab} />
 
       {tab === "cards" && (
@@ -86,13 +86,7 @@ function JobWork() {
             { id: "gold", label: "Fine gold (mg)", type: "number", value: "28400" },
             { id: "stones", label: "Stones (carat points)", type: "number", value: "80" },
           ]} onSubmit={(v) => act((d) => issueSlip(d, v.jc, +v.gold, +v.stones))} />
-          <Card title="Issue rules">
-            <ul className="flex list-disc flex-col gap-1.5 pl-[18px] text-muted-foreground">
-              <li>Gold is issued in fine gold, from a reserved metal lot.</li>
-              <li>Stones are issued by certificate for singles, by weight and pieces for melee.</li>
-              <li>Both appear on the vendor&apos;s account straight away.</li>
-            </ul>
-          </Card>
+          <p className="text-muted-foreground">Gold is issued in fine gold from a metal lot. Stones go by certificate for singles and by weight for melee. Both show on the vendor&apos;s account at once.</p>
           <div className="lg:col-span-2"><Grid head={["Slip", "Date", "Job card", "Vendor", "Fine gold", "Stones", "Metal lot", "By"]} num={[4, 5]}
             rows={ofKind(s.records, "slip").map((x) => [x.id, x.date, x.f.jc, x.f.vendor, g(+x.f.gold), ct(+x.f.stones), x.f.lot, x.by])} /></div>
         </div>
@@ -105,7 +99,7 @@ function JobWork() {
             { id: "pieces", label: "Pieces received", type: "number", value: "6" },
             { id: "scrap", label: "Scrap and dust (mg fine)", type: "number", value: "2480" },
           ]} onSubmit={(v) => act((d) => returnSlip(d, v.jc, +v.pieces, +v.scrap))} />
-          <Card title="After a return"><p className="text-muted-foreground">Pieces go to HO inward for stone matching, QC, hallmark and tagging. The job card closes once the reconciliation balances.</p></Card>
+          <p className="text-muted-foreground">Returned pieces go to inward for matching, QC, hallmark and tagging. The card closes once it balances.</p>
           <div className="lg:col-span-2"><Grid head={["Return", "Date", "Job card", "Vendor", "Pieces", "Scrap", "By"]} num={[4, 5]}
             rows={ofKind(s.records, "ret").map((x) => [x.id, x.date, x.f.jc, x.f.vendor, x.f.pieces, g(+x.f.scrap), x.by])} /></div>
         </div>

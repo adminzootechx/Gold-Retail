@@ -24,7 +24,7 @@ export default function Security() {
 
   return (
     <>
-      <PageHeader title="Users and access" sub="Who can open which screens, and which actions wait for approval." />
+      <PageHeader title="Users and access" sub="Who can open what, and what needs approval." />
       <Tabs<Tab> tabs={[["users", "Users"], ["permissions", "Permission grid"], ["rules", "Approval rules"], ["audit", "Audit log"]]} value={tab} onChange={setTab} />
 
       {tab === "users" && <Grid head={["Name", "Email", "Role", "Status"]} rows={USERS.map((u) => [u.name, u.email, u.role, <Pill key="s">{u.state}</Pill>])} />}

@@ -25,7 +25,7 @@ function Ecommerce() {
 
   return (
     <>
-      <PageHeader title="E-commerce orders" sub="The order exists from checkout. The piece is reserved before payment, so two buyers cannot pay for one piece." />
+      <PageHeader title="Online orders" sub="A piece is reserved before payment." />
       <Tabs<Tab> tabs={[["inbox", "Order inbox"], ["payments", "Payment verification"], ["pick", "Pick and pack"], ["ship", "Shipping and tracking"], ["notify", "Notification log"]]} value={tab} onChange={setTab} />
 
       {tab === "inbox" && (

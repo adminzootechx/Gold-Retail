@@ -62,7 +62,7 @@ export default function InwardPage() {
 
   return (
     <>
-      <PageHeader title="HO inward and tagging" sub="Receive against the job card, then stones, QC, hallmark, re-weigh and report. Only then a tag." />
+      <PageHeader title="Inward" sub="Receive, match, QC, hallmark, re-weigh, then tag." />
       <Tabs<Tab> tabs={[["receive", "Receive"], ["qc", "QC and tagging"], ["hallmark", "Hallmark"], ["certs", "Certificates"], ["tags", "Tag print queue"]]} value={tab} onChange={setTab} />
 
       {tab === "receive" && (

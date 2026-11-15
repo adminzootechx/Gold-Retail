@@ -6,7 +6,7 @@ export default function Audit() {
   const { s } = useStore();
   return (
     <>
-      <PageHeader title="Audit log" sub="Who did what, and when. Every action in this prototype writes here." />
+      <PageHeader title="Audit log" sub="Who did what, and when." />
       <Table head={["When", "Who", "What"]}>
         {s.log.map((l, i) => <Tr key={i} cells={[l.t, l.u, l.text]} />)}
       </Table>
