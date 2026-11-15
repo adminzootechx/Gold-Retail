@@ -6,11 +6,12 @@ import { inr } from "../lib/calc";
 import { Btn, Card, Field, PageHeader, Tabs, inputCls } from "../components/ui";
 import { FormCard, Grid, Kpis, Pill } from "../components/kit";
 import { PARTNERS } from "../lib/mock";
+import { receiveConsignment } from "../lib/actions3";
 
 type Tab = "memos" | "sent" | "received" | "stock" | "settle";
 
 export default function Consignment() {
-  const { s, act, say } = useStore();
+  const { s, act } = useStore();
   const [tab, setTab] = useState<Tab>("memos");
   const [party, setParty] = useState(PARTNERS[0]);
   const [picked, setPicked] = useState<string[]>([]);
@@ -53,7 +54,7 @@ export default function Consignment() {
           { id: "from", label: "Received from", value: "Studio Rhea (designer)" },
           { id: "n", label: "Pieces", type: "number", value: "2" },
           { id: "note", label: "Terms", type: "textarea", value: "Sold pieces are bought at the agreed price. Unsold pieces go back." },
-        ]} onSubmit={(v) => say(`${v.n} pieces received from ${v.from}, held in a separate location (prototype)`)} />
+        ]} onSubmit={(v) => { act((d) => receiveConsignment(d, v.from, +v.n, v.note)); setTab("memos"); }} />
       )}
 
       {tab === "stock" && (

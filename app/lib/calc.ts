@@ -2,7 +2,8 @@
 // Weights are integers: gold in milligrams of fine gold, stones in carat points (1 ct = 100 pts).
 import type { Item, Order } from "./data";
 
-export const RATE24 = 13250; // sample 24K rate, rupees per gram
+export let RATE24 = 13250; // today's 24K rate, rupees per gram. The store keeps it in step with the latest saved rate.
+export const setRate = (n: number) => { RATE24 = n; };
 export const PUR = 0.75; // 18K
 export const STONE_PER_CT = 45000; // sample lab-grown rate, rupees per carat
 export const WASTAGE_PER_MILLE = 15; // 1.5% of issued fine gold is allowed wastage

@@ -4,7 +4,8 @@ import { useStore } from "../lib/store";
 import { ct, g, inr, jcCalc, PUR } from "../lib/calc";
 import { Btn, PageHeader } from "../components/ui";
 import { Grid } from "../components/kit";
-import { AP } from "../lib/mock";
+import { payables } from "../lib/ledger";
+import { ofKind } from "../lib/records";
 import { ageBucket, custName, receivables } from "../lib/stats";
 import { REPAIR_STEPS } from "../lib/actions";
 import type { State } from "../lib/data";
@@ -23,8 +24,10 @@ const REPORTS: Report[] = [
   { id: "exchange", name: "Exchange and refund register", head: ["Request", "Type", "Reference", "Value", "State"], rows: (s) => s.approvals.filter((a) => a.type === "Refund" || a.type === "Exchange valuation").map((a) => [a.id, a.type, a.ref, a.value ? inr(a.value) : "", a.state]) },
   { id: "consign", name: "Consignment status", head: ["Memo", "Direction", "Party", "Pieces", "State"], rows: (s) => s.memos.map((m) => [m.id, m.dir, m.party, m.tags.length, m.state]) },
   { id: "ar", name: "Receivable ageing", head: ["Party", "Amount", "Age", "Invoice"], rows: (s) => receivables(s.invoices).map((v) => [custName(s.customers, v.custId), inr(v.amount - v.paid), ageBucket(v.date), v.id]) },
-  { id: "ap", name: "Payable ageing", head: ["Party", "Amount", "Age", "Note"], rows: () => AP.map((r) => [r.party, inr(r.due), r.age, r.note]) },
+  { id: "ap", name: "Payable ageing", head: ["Party", "Amount", "Age", "Note"], rows: (s) => payables(s).map((r) => [r.party, inr(r.due), r.age, r.note]) },
   { id: "approvals", name: "Approval log", head: ["Request", "Type", "Reference", "Raised by", "State"], rows: (s) => s.approvals.map((a) => [a.id, a.type, a.ref, a.by, a.state]) },
+  { id: "grn", name: "Goods receipt register", head: ["Receipt", "Date", "Purchase order", "Supplier", "Ordered", "Received", "Result"], rows: (s) => ofKind(s.records, "grn").map((x) => [x.id, x.date, x.f.po, x.f.supplier, x.f.ordered, x.f.received, x.f.result]) },
+  { id: "vouchers", name: "Voucher register", head: ["Voucher", "Date", "Type", "Party", "Mode", "Amount"], rows: (s) => ofKind(s.records, "voucher").map((x) => [x.id, x.date, x.f.type, x.f.party, x.f.mode, Number(x.f.amount)]) },
   { id: "audit", name: "Audit trail", head: ["When", "Who", "What"], rows: (s) => s.log.map((l) => [l.t, l.u, l.text]) },
 ];
 
@@ -55,7 +58,7 @@ export default function Reports() {
       <div className="grid items-start gap-3.5 lg:grid-cols-[240px_1fr]">
         <nav aria-label="Reports" className="flex flex-col gap-0.5 rounded-[var(--radius)] border border-border bg-card p-2">
           {REPORTS.map((x) => (
-            <button key={x.id} onClick={() => setId(x.id)} className={"rounded-lg px-2.5 py-1.5 text-left font-medium " + (x.id === id ? "bg-gold-light text-gold" : "hover:bg-muted")}>{x.name}</button>
+            <button key={x.id} onClick={() => setId(x.id)} className={"rounded-lg px-2.5 py-1.5 text-left font-medium " + (x.id === id ? "bg-gold-light text-primary" : "hover:bg-muted")}>{x.name}</button>
           ))}
         </nav>
         <div>

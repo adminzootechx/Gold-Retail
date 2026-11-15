@@ -19,6 +19,7 @@ export interface JobCard {
   state: "Received" | "At vendor" | "Closed"; lot: string; approved?: boolean;
 }
 export interface Inward {
+  sent?: boolean;
   id: string; jc: string; sku: string; name: string; variant: string;
   gross: number; stones: number; need: boolean; done: number[];
   huid: string | null; rew: number | null; tag: string | null;
@@ -32,16 +33,20 @@ export interface Order { id: string; cust: string; sku: string; variant: string;
 export interface LogRow { t: string; u: string; text: string }
 export interface Lot { id: string; fine: number }
 export interface PO { id: string; supplier: string; what: string; qty: string; value: number; state: "Draft" | "Pending approval" | "Sent" | "Received" }
-export interface Memo { id: string; dir: "Sent" | "Received"; party: string; tags: string[]; state: "Out" | "Sold" | "Returned" }
+export interface Memo { qty?: number; id: string; dir: "Sent" | "Received"; party: string; tags: string[]; state: "Out" | "Sold" | "Returned" }
 export interface Msg { t: string; channel: "WhatsApp" | "Email" | "SMS"; segment: string; text: string; count: number }
 export interface Customer { id: string; name: string; city: string; segment: "Repeat" | "HNI" | "Online" | "Corporate" | "New"; occasion: string; pref: string }
 export interface Invoice { id: string; date: string; channel: Channel; store: string; custId: string; amount: number; paid: number; tags: string[]; sku?: string }
+
+/** Saved forms: BOMs, pricing, certificate rules, goods receipts, slips, vouchers, rates, rules, walk-ins, requests and profiles. */
+export type RecKind = "bom" | "price" | "certreq" | "grn" | "qc" | "slip" | "ret" | "voucher" | "rate" | "walkin" | "rule" | "pr" | "profile";
+export interface Rec { id: string; kind: RecKind; date: string; by: string; f: Record<string, string> }
 
 export interface State {
   authed: boolean; role: Role;
   lots: Lot[]; designs: Design[]; skus: Sku[]; jcs: JobCard[]; inw: Inward[];
   approvals: Approval[]; repairs: Repair[]; orders: Order[]; items: Item[]; log: LogRow[];
-  pos: PO[]; memos: Memo[]; messages: Msg[]; customers: Customer[]; invoices: Invoice[];
+  pos: PO[]; memos: Memo[]; messages: Msg[]; customers: Customer[]; invoices: Invoice[]; records: Rec[];
 }
 /** The parts of State that live in the database. Who is signed in stays in the browser tab. */
 export type Stored = Omit<State, "authed" | "role">;
@@ -88,6 +93,27 @@ const CUSTOMERS: Customer[] = [
   { id: "C-1011", name: "Arvind & Sons Corporate", city: "Pune", segment: "Corporate", occasion: "Year-end gifting", pref: "Bulk pendants" },
   { id: "C-1012", name: "Nandini Shah", city: "Ahmedabad", segment: "New", occasion: "Wedding 14 Feb", pref: "Bridal set" },
 ];
+
+const SEED_DATE = "2026-11-12";
+const rec = (id: string, kind: RecKind, f: Record<string, string>, by = "Founder", date = SEED_DATE): Rec => ({ id, kind, date, by, f });
+function seedRecords(skus: Sku[]): Rec[] {
+  const out: Rec[] = [];
+  const rates: [string, string, string][] = [["2026-11-12", "13250", "9938"], ["2026-11-11", "13210", "9908"], ["2026-11-10", "13180", "9885"], ["2026-11-07", "13095", "9821"]];
+  rates.forEach(([date, r24, r18], i) => out.push(rec("RT-" + (4 - i), "rate", { r24, r18, source: "Manual" }, "Founder", date)));
+  [["r1", "Final CAD lock", "Always", "", "Design head, then founder"], ["r2", "Purchase order", "Above value", "500000", "Procurement head, founder above the limit"], ["r3", "Discount", "Above percent", "10", "Store manager up to the limit, founder above"],
+   ["r4", "Metal variance", "Beyond allowed wastage", "1.5", "Production manager, founder"], ["r5", "Refund", "Always", "", "Store manager and accounts"], ["r6", "Stock write-off", "Always", "", "Founder"]]
+    .forEach(([id, name, rule, limit, approver]) => out.push(rec(id, "rule", { name, rule, limit, approver })));
+  [["PR-908", "Round 1.0 mm melee, VS-EF", "14.00 ct", "Production", "Below minimum for JC-2412", "Approved"], ["PR-909", "Bails 18K", "300 pcs", "Production", "Reorder alert", "Pending"], ["PR-910", "Gift sleeves", "400 pcs", "Store", "Below reorder level", "Pending"]]
+    .forEach(([id, item, qty, from, reason, status]) => out.push(rec(id, "pr", { item, qty, from, reason, status }, from)));
+  skus.forEach((k, i) => {
+    out.push(rec("BOM-" + (i + 1), "bom", { sku: k.code, v: "1", gold: String(+(2.4 + (i % 4) * 0.7).toFixed(2)), centre: String(+(0.3 + (i % 3) * 0.2).toFixed(2)), melee: String(+(0.1 + (i % 2) * 0.12).toFixed(2)), findings: String(2 + (i % 4)), pack: "1" }, "Design head"));
+    out.push(rec("PRC-" + (i + 1), "price", { sku: k.code, v: "1", making: String(12000 + i * 1800), margin: String(20 + (i % 3) * 2) }, "Founder"));
+    out.push(rec("CRQ-" + (i + 1), "certreq", { sku: k.code, v: "1", igi: i % 5 === 3 ? "no" : "yes", sgl: "no", huid: "yes" }, "Production manager"));
+  });
+  out.push(rec("GRN-0457", "grn", { po: "PO-3309", supplier: "Pack & Pride", ordered: "300 pcs", received: "300 pcs", diff: "0", result: "Matched", lot: "-" }, "Production manager", "2026-11-04"));
+  out.push(rec("RV-101", "voucher", { type: "Receipt", party: "Anand Jewellers, Pune", amount: "250000", mode: "Bank transfer", ref: "-" }, "Accounts", "2026-11-09"));
+  return out;
+}
 
 export function seed(): Stored {
   const rand = rng(20261112);
@@ -244,6 +270,7 @@ export function seed(): Stored {
       { t: "05 Nov, 16:30", channel: "Email", segment: "HNI customers", text: "Preview: the winter solitaire collection.", count: 3 },
       { t: "29 Oct, 10:15", channel: "SMS", segment: "Online buyers", text: "Diwali offer: complimentary engraving on all pendants.", count: 6 },
     ],
+    records: seedRecords(CATALOG.map((c) => ({ code: c.code })) as Sku[]),
     log: [
       { t: "12 Nov, 09:14", u: "Production manager", text: "Job card JC-2411 received at HO, 6 pieces" },
       { t: "12 Nov, 08:50", u: "Store manager", text: "Refund RF-88 requested for AK-PND-007-0003" },

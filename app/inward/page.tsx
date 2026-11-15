@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useStore } from "../lib/store";
 import { INWARD_STEPS, inwardStep, inwardTag } from "../lib/actions";
+import { linkCert, receiveHallmark, receivePieces, sendHallmark } from "../lib/actions3";
 import { g } from "../lib/calc";
 import { Badge, Btn, Card, PageHeader, Step, Tabs } from "../components/ui";
 import { FormCard, Grid, Pill } from "../components/kit";
@@ -12,7 +13,7 @@ import type { Inward } from "../lib/data";
 type Tab = "receive" | "qc" | "hallmark" | "certs" | "tags";
 
 export default function InwardPage() {
-  const { s, act, say } = useStore();
+  const { s, act } = useStore();
   const [tab, setTab] = useState<Tab>("qc");
 
   const card = (p: Inward) => {
@@ -72,7 +73,7 @@ export default function InwardPage() {
             { id: "jc", label: "Job card", type: "select", options: s.jcs.map((j) => j.id) },
             { id: "n", label: "Pieces", type: "number", value: "6" },
             { id: "w", label: "Total gross weight (mg)", type: "number", value: "31800" },
-          ]} onSubmit={(v) => say(`${v.n} pieces received against ${v.jc} (prototype)`)} />
+          ]} onSubmit={(v) => act((d) => receivePieces(d, v.jc, +v.n, +v.w))} />
         </div>
       )}
 
@@ -82,8 +83,8 @@ export default function InwardPage() {
         <>
           <Grid head={["Piece", "HUID", "Where", "Status", ""]}
             rows={[
-              ...s.inw.filter((p) => p.done[1] && !p.tag).map((p) => [p.id, p.huid ?? "Pending", "HO", <Pill key="a">{p.huid ? "Received" : "Pending"}</Pill>, p.huid ? "" : <Btn key="b" sm gold onClick={() => say(p.id + " sent to the hallmark centre (prototype)")}>Send out</Btn>]),
-              ...s.items.filter((i) => i.status === "AtHallmark").map((i) => [i.tag, i.huid, "Hallmark centre", <Pill key={i.tag}>At hallmark</Pill>, <Btn key="r" sm onClick={() => say(i.tag + " received back, re-weigh next (prototype)")}>Receive back</Btn>]),
+              ...s.inw.filter((p) => p.done[1] && !p.tag).map((p) => [p.id, p.huid ?? "Pending", "HO", <Pill key="a">{p.huid ? "Received" : p.sent ? "At hallmark centre" : "Pending"}</Pill>, p.huid || p.sent ? "" : <Btn key="b" sm gold onClick={() => act((d) => sendHallmark(d, p.id))}>Send out</Btn>]),
+              ...s.items.filter((i) => i.status === "AtHallmark").map((i) => [i.tag, i.huid, "Hallmark centre", <Pill key={i.tag}>At hallmark</Pill>, <Btn key="r" sm onClick={() => act((d) => receiveHallmark(d, i.tag))}>Receive back</Btn>]),
             ]} />
           <p className="mt-2 text-[12.5px] text-muted-foreground">Every piece is re-weighed when it returns, because hallmarking removes a little metal.</p>
         </>
@@ -96,7 +97,7 @@ export default function InwardPage() {
             { id: "tag", label: "Tag", type: "select", options: s.items.map((i) => i.tag) },
             { id: "lab", label: "Lab", type: "select", options: ["IGI", "SGL"] },
             { id: "no", label: "Report number", placeholder: "LG6120999" },
-          ]} onSubmit={(v) => say(`${v.lab} ${v.no || "report"} linked to ${v.tag} (prototype)`)} />
+          ]} onSubmit={(v) => act((d) => linkCert(d, v.tag, v.lab, v.no))} />
         </div>
       )}
 

@@ -41,7 +41,7 @@ export default function Demo() {
           <li key={i} className={"rounded-[var(--radius)] border bg-card p-4 " + (done.includes(i) ? "border-success/50" : "border-border")}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <div className="mb-0.5 flex flex-wrap items-center gap-2"><span className="font-display font-bold text-gold tabular-nums">{String(i + 1).padStart(2, "0")}</span><b className="text-base">{st.title}</b><span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{st.role}</span></div>
+                <div className="mb-0.5 flex flex-wrap items-center gap-2"><span className="font-display font-bold text-primary tabular-nums">{String(i + 1).padStart(2, "0")}</span><b className="text-base">{st.title}</b><span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{st.role}</span></div>
                 <p className="text-muted-foreground">{st.say}</p>
                 <p className="mt-1 text-[13px]"><b>Do:</b> {st.do}</p>
               </div>

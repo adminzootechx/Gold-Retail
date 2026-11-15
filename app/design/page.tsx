@@ -34,7 +34,7 @@ export default function DesignPage() {
               const list = s.designs.filter((d) => d.stage === i);
               return (
                 <section key={c} className="min-h-[160px] rounded-[var(--radius)] bg-muted p-2.5">
-                  <h4 className="mb-2 flex justify-between text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"><span>{c}</span><span>{list.length}</span></h4>
+                  <h4 className="mb-2 flex justify-between text-xs font-semibold tracking-wide text-muted-foreground"><span>{c}</span><span>{list.length}</span></h4>
                   {list.map((d) => (
                     <div key={d.id} className={"mb-2 rounded-[10px] border bg-card px-3 py-2.5 " + (d.id === d0.id ? "border-gold" : "border-border")}>
                       <button className="block text-left text-[13px] font-bold hover:underline" onClick={() => setSel(d.id)}>{d.name}</button>

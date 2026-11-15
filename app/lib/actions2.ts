@@ -1,6 +1,7 @@
 // More state changes for the full-screen build. Same rules as actions.ts: edit the draft, return a message.
 import { g } from "./calc";
 import { addInvoice, log } from "./actions";
+import { limitOf } from "./records";
 import type { State } from "./data";
 
 const now = () => new Date().toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -83,7 +84,7 @@ export function sendCampaign(d: State, channel: "WhatsApp" | "Email" | "SMS", se
 
 export function createPO(d: State, supplier: string, what: string, qty: string, value: number) {
   const id = "PO-" + (3317 + d.pos.length - 3);
-  const big = value > 500000;
+  const big = value > limitOf(d.records, "r2", 500000);
   d.pos.unshift({ id, supplier, what, qty, value, state: big ? "Pending approval" : "Sent" });
   if (big) d.approvals.unshift({ id: apId(d), type: "Purchase order", ref: id, by: "Procurement", detail: what, value, state: "pending" });
   log(d, `${id} created for ${supplier}`);
@@ -91,12 +92,13 @@ export function createPO(d: State, supplier: string, what: string, qty: string, 
 }
 
 export function submitDiscount(d: State, ref: string, pct: number, detail: string) {
-  if (pct > 10) {
+  const lim = limitOf(d.records, "r3", 10);
+  if (pct > lim) {
     d.approvals.unshift({ id: apId(d), type: "Discount over 10%", ref, by: "Store manager", detail: `${pct}% ${detail}`, value: null, state: "pending" });
     log(d, `Discount ${pct}% on ${ref} sent for approval`);
-    return "Discount above 10% sent for approval";
+    return `Discount above ${lim}% sent for approval`;
   }
-  return "Discount within the store manager's limit, applied";
+  return `Discount within the ${lim}% limit, applied`;
 }
 
 export function corporateOrder(d: State, company: string, sku: string, qty: number, advPct: number) {

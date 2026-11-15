@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { useStore } from "../lib/store";
 import { posSale, receiveItem } from "../lib/actions2";
+import { saveWalkin } from "../lib/actions3";
+import { ofKind } from "../lib/records";
 import { g, inr } from "../lib/calc";
 import { THIS_MONTH, TODAY, custName, lakh, monthKey } from "../lib/stats";
 import { Bars, Btn, Card, Field, PageHeader, Rec, Tabs, inputCls } from "../components/ui";
@@ -23,7 +25,6 @@ export default function Stores() {
   const [cust, setCust] = useState("Walk-in customer");
   const [sale, setSale] = useState<{ inv: string; lines: Item[]; who: string } | null>(null);
   const [open, setOpen] = useState(false);
-  const [walkins, setWalkins] = useState([{ name: "Neha S.", interest: "Solitaire ring", store: "Mumbai Flagship" }]);
 
   const here = s.items.filter((i) => i.loc === store && i.status === "InStock");
   const choices = here.filter((i) => !cart.includes(i.tag));
@@ -135,8 +136,8 @@ export default function Stores() {
       {tab === "walkin" && (
         <div className="grid items-start gap-3.5 lg:grid-cols-2">
           <FormCard title="Capture a walk-in" cta="Save walk-in" fields={[{ id: "name", label: "Name" }, { id: "interest", label: "Interested in", value: "Solitaire ring" }]}
-            onSubmit={(v) => { setWalkins([{ name: v.name || "Guest", interest: v.interest, store }, ...walkins]); say("Walk-in saved (prototype)"); }} />
-          <Grid head={["Name", "Interested in", "Store"]} rows={walkins.map((w) => [w.name, w.interest, w.store])} />
+            onSubmit={(v) => act((d) => saveWalkin(d, v.name, v.interest, store))} />
+          <Grid head={["Date", "Name", "Interested in", "Store", "Captured by"]} rows={ofKind(s.records, "walkin").map((w) => [w.date, w.f.name, w.f.interest, w.f.store, w.by])} />
         </div>
       )}
     </>

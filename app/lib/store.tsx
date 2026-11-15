@@ -1,6 +1,8 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { seed, type Role, type State, type Stored } from "./data";
+import { setRate } from "./calc";
+import { currentRate } from "./records";
 
 export type Sync = "loading" | "saved" | "saving" | "offline";
 
@@ -8,8 +10,10 @@ interface Store {
   s: State;
   ready: boolean;
   /** Edit a draft copy of the state. Return a string to show it as a message. The change is saved to the database. */
-  act: (fn: (d: State) => string | void) => void;
+  act: (fn: (d: State) => string | void, opts?: { undoable?: boolean }) => void;
   toast: string;
+  /** Set while the last undoable change can still be taken back. */
+  undo: (() => void) | null;
   /** Show a message without changing any data. */
   say: (m: string) => void;
   signIn: (role: Role) => void;
@@ -36,11 +40,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const saver = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const commit = useCallback((d: State) => { ref.current = d; setS(d); }, []);
-  const flash = useCallback((m: string) => {
+  const commit = useCallback((d: State) => { setRate(currentRate(d.records)); ref.current = d; setS(d); }, []);
+  const prev = useRef<State | null>(null);
+  const [canUndo, setCanUndo] = useState(false);
+  const flash = useCallback((m: string, long = false) => {
     setToast(m);
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => setToast(""), 2600);
+    timer.current = setTimeout(() => { setToast(""); setCanUndo(false); }, long ? 8000 : 2600);
   }, []);
 
   // Who is signed in lasts for the browser tab. Read it once on the client to avoid a hydration mismatch.
@@ -77,12 +83,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }, 500);
   }, []);
 
-  const act = useCallback((fn: (d: State) => string | void) => {
-    const d = structuredClone(ref.current);
+  const act = useCallback((fn: (d: State) => string | void, opts?: { undoable?: boolean }) => {
+    const before = ref.current;
+    const d = structuredClone(before);
     const m = fn(d);
     commit(d);
     persist();
-    if (m) flash(m);
+    if (opts?.undoable) prev.current = before;
+    setCanUndo(!!opts?.undoable);
+    if (m) flash(m, !!opts?.undoable);
+  }, [commit, flash, persist]);
+
+  const undo = useCallback(() => {
+    if (!prev.current) return;
+    commit({ ...prev.current, authed: ref.current.authed, role: ref.current.role });
+    prev.current = null;
+    persist();
+    setCanUndo(false);
+    flash("Undone");
   }, [commit, flash, persist]);
 
   const reset = useCallback(async () => {
@@ -106,7 +124,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const setRole = (role: Role) => { remember(role); commit({ ...ref.current, role }); };
 
   const ready = roleRead && sync !== "loading";
-  return <Ctx.Provider value={{ s, ready, act, toast, say: flash, signIn, signOut, setRole, sync, dbKind, reset }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ s, ready, act, toast, undo: canUndo ? undo : null, say: flash, signIn, signOut, setRole, sync, dbKind, reset }}>{children}</Ctx.Provider>;
 }
 
 export function useStore() {

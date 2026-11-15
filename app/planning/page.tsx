@@ -60,7 +60,7 @@ export default function Planning() {
           <div>
             <h3 className="mb-2 text-lg font-semibold">Latest job cards</h3>
             <Grid head={["Card", "Vendor", "SKU", "Qty", "Fine gold", "Status"]} num={[3, 4]}
-              rows={s.jcs.slice(0, 5).map((j) => [<Link key="i" href="/job-work" className="font-mono text-[12.5px] text-gold underline">{j.id}</Link>, j.vendor, j.sku, j.qty, g(j.issued), <Pill key="s">{j.state}</Pill>])} />
+              rows={s.jcs.slice(0, 5).map((j) => [<Link key="i" href="/job-work" className="font-mono text-[12.5px] text-primary underline">{j.id}</Link>, j.vendor, j.sku, j.qty, g(j.issued), <Pill key="s">{j.state}</Pill>])} />
             <p className="mt-2 text-[12.5px] text-muted-foreground">Gold is reserved from the vault when a card is created. Total issued at today&apos;s rate: {inr(s.jcs.reduce((a, j) => a + (j.issued / 1000) * 13250, 0))}.</p>
           </div>
         </div>

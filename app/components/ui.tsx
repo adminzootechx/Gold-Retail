@@ -8,7 +8,7 @@ const KINDS = {
   warn: "bg-warning-bg text-warning",
   bad: "bg-danger-bg text-danger",
   info: "bg-info-bg text-info",
-  gold: "bg-gold-light text-gold",
+  gold: "bg-gold-light text-primary",
   mute: "bg-muted text-muted-foreground",
 };
 export type Kind = keyof typeof KINDS;
@@ -26,7 +26,7 @@ export const StatusBadge = ({ status }: { status: Status }) => <Badge kind={STAT
 
 export function PageHeader({ title, sub, children }: { title: ReactNode; sub?: ReactNode; children?: ReactNode }) {
   return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
         <h1 className="text-3xl font-semibold">{title}</h1>
         {sub && <p className="mt-0.5 text-muted-foreground">{sub}</p>}
@@ -38,8 +38,8 @@ export function PageHeader({ title, sub, children }: { title: ReactNode; sub?: R
 
 export function Card({ title, children, className }: { title?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <div className={cx("min-w-0 rounded-[var(--radius)] border border-border bg-card p-4", className)}>
-      {title && <h2 className="mb-2.5 text-lg font-semibold">{title}</h2>}
+    <div className={cx("min-w-0 rounded-2xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(4,53,68,0.04)]", className)}>
+      {title && <h2 className="mb-4 text-lg font-semibold">{title}</h2>}
       {children}
     </div>
   );
@@ -67,7 +67,7 @@ export function Table({ head, num = [], children }: { head: string[]; num?: numb
         <thead>
           <tr>
             {head.map((h, i) => (
-              <th key={h + i} className={cx("whitespace-nowrap border-b border-border bg-muted px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground", num.includes(i) ? "text-right" : "text-left")}>{h}</th>
+              <th key={h + i} className={cx("whitespace-nowrap border-b border-border bg-muted px-3.5 py-2.5 text-xs font-semibold tracking-wide text-muted-foreground", num.includes(i) ? "text-right" : "text-left")}>{h}</th>
             ))}
           </tr>
         </thead>
@@ -111,7 +111,7 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: [T, st
     <div className="mb-4 flex gap-1 overflow-x-auto border-b border-border" role="tablist">
       {tabs.map(([k, l]) => (
         <button key={k} role="tab" aria-selected={value === k} onClick={() => onChange(k)}
-          className={cx("-mb-px min-h-10 border-b-2 px-3.5 py-2 font-semibold pointer-coarse:min-h-11", value === k ? "border-gold text-gold" : "border-transparent text-muted-foreground")}>{l}</button>
+          className={cx("-mb-px min-h-10 border-b-2 px-3.5 py-2 font-semibold pointer-coarse:min-h-11", value === k ? "border-gold text-primary" : "border-transparent text-muted-foreground")}>{l}</button>
       ))}
     </div>
   );

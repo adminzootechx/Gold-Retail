@@ -2,22 +2,24 @@
 
 /* Design tokens. Light only. Values follow the Jewelrex (gold ERP) reference build. */
 :root {
-  --background: #f8f7f4;
-  --foreground: #0f172a;
+  --background: #ffffff;
+  --foreground: #0b2530;
   --card: #ffffff;
-  --border: #e2e8f0;
-  --muted: #f1f5f9;
-  --muted-foreground: #5e6b80;
-  --primary: #1e3a8a;
-  --gold: #b8860b;
-  --gold-fg: #1a1405;
-  --gold-light: #fef9e7;
-  --gold-mid: #f0c040;
+  --border: #dfe5e8;
+  --muted: #eff3f4;
+  --muted-foreground: #56696f;
+  --primary: #043544;
+  --gold: #d0a038;
+  --gold-fg: #043544;
+  --frame: #1b1c1e;
+  --gold-dark: #a37a14;
+  --gold-light: #faf3df;
+  --gold-mid: #e3be6a;
   --success: #16a34a;
   --success-bg: #f0fdf4;
   --warning: #b45309;
   --warning-bg: #fffbeb;
-  --danger: #dc2626;
+  --danger: #c81e1e;
   --danger-bg: #fef2f2;
   --info: #0369a1;
   --info-bg: #f0f9ff;
@@ -40,6 +42,8 @@
   --color-primary: var(--primary);
   --color-gold: var(--gold);
   --color-gold-fg: var(--gold-fg);
+  --color-frame: var(--frame);
+  --color-gold-dark: var(--gold-dark);
   --color-gold-light: var(--gold-light);
   --color-gold-mid: var(--gold-mid);
   --color-success: var(--success);
@@ -101,3 +105,16 @@ button:disabled { cursor: not-allowed; }
   .app-main { overflow: visible !important; height: auto !important; }
   .no-print { display: none !important; }
 }
+
+/* Preferences: table density and text size */
+[data-density="compact"] td, [data-density="compact"] th { padding-block: 0.3rem; }
+[data-text="large"] { font-size: 112.5%; }
+
+/* Title Case for every label and heading. Body copy and data values keep their own case. */
+h1, h2, h3, h4, th, label, button, [role="tab"], nav a, summary { text-transform: capitalize; }
+button:has(> code), td button, input, select, textarea, option { text-transform: none; }
+
+/* The menu drawer slides in from the left on tablets and phones. */
+@keyframes drawer-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+.drawer-in { animation: drawer-in 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
+@media (prefers-reduced-motion: reduce) { .drawer-in { animation: none; } }

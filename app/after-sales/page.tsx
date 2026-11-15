@@ -30,7 +30,7 @@ export default function AfterSales() {
           {s.repairs.map((r) => (
             <Tr key={r.id} num={[4]} cells={[
               <span key="i" className="font-mono text-[12.5px]">{r.id}</span>,
-              <Link key="t" href={"/trace?tag=" + r.tag} className="font-mono text-[12.5px] text-gold underline">{r.tag}</Link>,
+              <Link key="t" href={"/trace?tag=" + r.tag} className="font-mono text-[12.5px] text-primary underline">{r.tag}</Link>,
               r.issue, <Badge key="s" kind={r.state === 7 ? "ok" : "gold"}>{REPAIR_STEPS[r.state]}</Badge>, inr(r.quote),
               r.state < 7 ? <Btn key="b" gold sm onClick={() => act((d) => repairNext(d, r.id))}>Next step</Btn> : "",
             ]} />

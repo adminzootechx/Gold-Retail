@@ -1,7 +1,7 @@
 import { seed, type Stored } from "../data";
 import { getDb, type Db } from "./db";
 
-export const COLLECTIONS = ["lots", "designs", "skus", "jcs", "inw", "approvals", "repairs", "orders", "items", "log", "pos", "memos", "messages", "customers", "invoices"] as const;
+export const COLLECTIONS = ["lots", "designs", "skus", "jcs", "inw", "approvals", "repairs", "orders", "items", "log", "pos", "memos", "messages", "customers", "invoices", "records"] as const;
 type Coll = (typeof COLLECTIONS)[number];
 
 const idOf = (v: unknown): string | null => {

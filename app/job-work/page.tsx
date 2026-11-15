@@ -7,11 +7,13 @@ import { ct, g, inr, jcBalanced, jcCalc } from "../lib/calc";
 import { Badge, Btn, Card, Field, PageHeader, Rec, Table, Tabs, Tr, inputCls } from "../components/ui";
 import { FormCard, Grid, Pill } from "../components/kit";
 import { VENDORS } from "../lib/mock";
+import { issueSlip, returnSlip } from "../lib/actions3";
+import { ofKind } from "../lib/records";
 
 type Tab = "cards" | "vendors" | "issue" | "return" | "account" | "invoices";
 
 function JobWork() {
-  const { s, act, say } = useStore();
+  const { s, act } = useStore();
   const isVendor = s.role.startsWith("Vendor");
   const [tab, setTab] = useState<Tab>("cards");
   const [sel, setSel] = useState(useSearchParams().get("jc") ?? "JC-2409");
@@ -83,7 +85,7 @@ function JobWork() {
             { id: "jc", label: "Job card", type: "select", options: s.jcs.filter((x) => x.state === "At vendor").map((x) => x.id) },
             { id: "gold", label: "Fine gold (mg)", type: "number", value: "28400" },
             { id: "stones", label: "Stones (carat points)", type: "number", value: "80" },
-          ]} onSubmit={(v) => say(`Slip created for ${v.jc}: ${g(+v.gold)}, ${ct(+v.stones)} (prototype)`)} />
+          ]} onSubmit={(v) => act((d) => issueSlip(d, v.jc, +v.gold, +v.stones))} />
           <Card title="Issue rules">
             <ul className="flex list-disc flex-col gap-1.5 pl-[18px] text-muted-foreground">
               <li>Gold is issued in fine gold, from a reserved metal lot.</li>
@@ -91,6 +93,8 @@ function JobWork() {
               <li>Both appear on the vendor&apos;s account straight away.</li>
             </ul>
           </Card>
+          <div className="lg:col-span-2"><Grid head={["Slip", "Date", "Job card", "Vendor", "Fine gold", "Stones", "Metal lot", "By"]} num={[4, 5]}
+            rows={ofKind(s.records, "slip").map((x) => [x.id, x.date, x.f.jc, x.f.vendor, g(+x.f.gold), ct(+x.f.stones), x.f.lot, x.by])} /></div>
         </div>
       )}
 
@@ -100,8 +104,10 @@ function JobWork() {
             { id: "jc", label: "Job card", type: "select", options: s.jcs.map((x) => x.id) },
             { id: "pieces", label: "Pieces received", type: "number", value: "6" },
             { id: "scrap", label: "Scrap and dust (mg fine)", type: "number", value: "2480" },
-          ]} onSubmit={(v) => say(`Return recorded for ${v.jc}: ${v.pieces} pieces, ${g(+v.scrap)} scrap (prototype)`)} />
+          ]} onSubmit={(v) => act((d) => returnSlip(d, v.jc, +v.pieces, +v.scrap))} />
           <Card title="After a return"><p className="text-muted-foreground">Pieces go to HO inward for stone matching, QC, hallmark and tagging. The job card closes once the reconciliation balances.</p></Card>
+          <div className="lg:col-span-2"><Grid head={["Return", "Date", "Job card", "Vendor", "Pieces", "Scrap", "By"]} num={[4, 5]}
+            rows={ofKind(s.records, "ret").map((x) => [x.id, x.date, x.f.jc, x.f.vendor, x.f.pieces, g(+x.f.scrap), x.by])} /></div>
         </div>
       )}
 

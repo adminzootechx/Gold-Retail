@@ -4,16 +4,20 @@ import { useStore } from "../lib/store";
 import { MODS, ROLES, allowed } from "../lib/modules";
 import { Btn, Field, PageHeader, Tabs, inputCls } from "../components/ui";
 import { Grid, Pill } from "../components/kit";
-import { APPROVAL_RULES, USERS } from "../lib/mock";
+import { USERS } from "../lib/mock";
+import { saveRules } from "../lib/actions3";
+import { ofKind } from "../lib/records";
 import type { Role } from "../lib/data";
 
 type Tab = "users" | "permissions" | "rules" | "audit";
 
 export default function Security() {
-  const { s, say } = useStore();
+  const { s, act } = useStore();
+  const rules = ofKind(s.records, "rule");
   const [tab, setTab] = useState<Tab>("users");
   const [who, setWho] = useState("");
-  const [limits, setLimits] = useState<Record<string, string>>(Object.fromEntries(APPROVAL_RULES.map((r) => [r.id, r.limit])));
+  const [edits, setEdits] = useState<Record<string, string>>({});
+  const limitOf = (id: string, saved: string) => edits[id] ?? saved;
   const roles = Object.keys(ROLES) as Role[];
   const mods = MODS.flatMap(([, m]) => m);
   const users = [...new Set(s.log.map((l) => l.u))];
@@ -32,8 +36,8 @@ export default function Security() {
       {tab === "rules" && (
         <>
           <Grid head={["Approval", "Rule", "Limit", "Approver"]}
-            rows={APPROVAL_RULES.map((r) => [r.name, r.rule, r.limit ? <input key={r.id} aria-label={r.name + " limit"} value={limits[r.id]} onChange={(e) => setLimits({ ...limits, [r.id]: e.target.value })} className="h-8 w-28 rounded-md border border-border bg-background px-2" /> : "-", r.approver])} />
-          <div className="mt-3"><Btn gold onClick={() => say("Approval rules saved (prototype, not stored)")}>Save rules</Btn></div>
+            rows={rules.map((r) => [r.f.name, r.f.rule, r.f.limit ? <input key={r.id} aria-label={r.f.name + " limit"} value={limitOf(r.id, r.f.limit)} onChange={(e) => setEdits({ ...edits, [r.id]: e.target.value })} className="h-8 w-28 rounded-md border border-border bg-background px-2" /> : "-", r.f.approver])} />
+          <div className="mt-3"><Btn gold onClick={() => { act((d) => saveRules(d, edits)); setEdits({}); }}>Save rules</Btn></div>
           <p className="mt-2 text-[12.5px] text-muted-foreground">Limits are placeholders until AKOIRAH confirms its own. An edit to an approved value reopens approval, and nobody approves their own request.</p>
         </>
       )}

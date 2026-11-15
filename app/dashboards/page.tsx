@@ -1,5 +1,8 @@
 "use client";
-import { useState } from "react";
+import { Suspense } from "react";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useStore } from "../lib/store";
 import { Btn, Card, PageHeader, cx } from "../components/ui";
@@ -7,9 +10,10 @@ import { Grid, Kpis } from "../components/kit";
 import { build, type Chart, type Dash, type Filter } from "./build";
 import type { Channel } from "../lib/data";
 
-const COLORS = ["var(--gold)", "var(--primary)", "var(--success)", "var(--info)", "var(--gold-mid)", "var(--muted-foreground)"];
+// Teal carries the data. Gold-dark is the second series. Every colour is at least 3:1 against white.
+const COLORS = ["#043544", "#a37a14", "#4f8a99", "#7a8a90", "#2f7d4f", "#8a5a14"];
+const legend = { iconType: "circle" as const, wrapperStyle: { fontSize: 13 }, formatter: (v: string) => <span style={{ color: "var(--foreground)" }}>{v}</span> };
 const tick = { fill: "var(--muted-foreground)", fontSize: 12 };
-const OVERVIEW = "overview";
 
 function ChartView({ c }: { c: Chart }) {
   const keys = c.keys ?? ["v"];
@@ -29,11 +33,11 @@ function ChartView({ c }: { c: Chart }) {
           <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             {c.kind === "donut" ? (
               <PieChart>
-                <Pie data={c.data} dataKey="v" nameKey="name" innerRadius={56} outerRadius={88} paddingAngle={2} isAnimationActive={false}>
+                <Pie data={c.data} dataKey="v" nameKey="name" innerRadius={56} outerRadius={88} paddingAngle={2} stroke="var(--card)" isAnimationActive={false}>
                   {c.data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                <Legend {...legend} />
               </PieChart>
             ) : c.kind === "hbar" ? (
               <BarChart data={c.data} layout="vertical" margin={{ left: 8 }}>
@@ -41,29 +45,29 @@ function ChartView({ c }: { c: Chart }) {
                 <XAxis type="number" tick={tick} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="name" tick={tick} axisLine={false} tickLine={false} width={110} />
                 <Tooltip cursor={{ fill: "var(--muted)" }} />
-                <Bar dataKey="v" fill="var(--gold)" radius={[0, 6, 6, 0]} isAnimationActive={false} />
+                <Bar dataKey="v" fill="var(--primary)" radius={[0, 6, 6, 0]} isAnimationActive={false} />
               </BarChart>
             ) : c.kind === "line" ? (
               <LineChart data={c.data} margin={{ right: 20, top: 6 }}>
                 {axes}
-                <Line type="monotone" dataKey="v" stroke="var(--gold)" strokeWidth={2.5} dot={{ r: 3, fill: "var(--gold)" }} isAnimationActive={false} />
+                <Line type="monotone" dataKey="v" stroke="var(--primary)" strokeWidth={2.5} dot={{ r: 3, fill: "var(--primary)" }} isAnimationActive={false} />
               </LineChart>
             ) : c.kind === "lines" ? (
               <LineChart data={c.data} margin={{ right: 20, top: 6 }}>
                 {axes}
-                <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                <Legend {...legend} />
                 {keys.map((k, i) => <Line key={k} type="monotone" dataKey={k} stroke={COLORS[i]} strokeWidth={2.5} strokeDasharray={i ? "5 4" : undefined} dot={{ r: 3 }} isAnimationActive={false} />)}
               </LineChart>
             ) : c.kind === "stack" ? (
               <BarChart data={c.data} margin={{ right: 12, top: 6 }}>
                 {axes}
-                <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                {keys.map((k, i) => <Bar key={k} dataKey={k} stackId="a" fill={COLORS[i % COLORS.length]} isAnimationActive={false} />)}
+                <Legend {...legend} />
+                {keys.map((k, i) => <Bar key={k} dataKey={k} stackId="a" stroke="var(--card)" strokeWidth={2} fill={COLORS[i % COLORS.length]} isAnimationActive={false} />)}
               </BarChart>
             ) : (
               <BarChart data={c.data} margin={{ right: 12, top: 6 }}>
                 {axes}
-                <Bar dataKey="v" fill="var(--gold)" radius={[6, 6, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey="v" fill="var(--primary)" radius={[6, 6, 0, 0]} isAnimationActive={false} />
               </BarChart>
             )}
           </ResponsiveContainer>
@@ -87,67 +91,115 @@ function Insights({ list }: { list: string[] }) {
   return (
     <Card title="What stands out">
       <ul className="m-0 grid list-none gap-x-6 gap-y-2.5 p-0 [grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))]">
-        {list.map((t, i) => <li key={i} className="flex gap-2.5 text-[14px] leading-snug"><i className="mt-[7px] size-1.5 flex-none rounded-full bg-gold" aria-hidden />{t}</li>)}
+        {list.map((t, i) => <li key={i} className="flex gap-2.5 text-[15px] leading-snug"><i className="mt-[7px] size-1.5 flex-none rounded-full bg-gold-dark" aria-hidden />{t}</li>)}
       </ul>
+    </Card>
+  );
+}
+
+const GROUPS: [string, string[]][] = [
+  ["Stock", ["inventory", "raw", "dead", "fast"]],
+  ["Making", ["production", "manufacturing", "vendor"]],
+  ["Money", ["sales", "finance", "ledgers"]],
+  ["People", ["customer", "stores"]],
+];
+
+function Alerts({ list }: { list: { text: string; href: string }[] }) {
+  return (
+    <Card title="Needs attention">
+      {list.length ? (
+        <ul className="m-0 flex list-none flex-col divide-y divide-border p-0">
+          {list.map((a, i) => (
+            <li key={i}><Link href={a.href} className="flex min-h-12 items-center justify-between gap-3 py-2 hover:text-primary"><span className="text-[15px] leading-snug">{a.text}</span><ChevronRight className="size-4 flex-none text-muted-foreground" aria-hidden /></Link></li>
+          ))}
+        </ul>
+      ) : <p className="text-muted-foreground">Nothing needs attention here.</p>}
     </Card>
   );
 }
 
 function Overview({ all, pick }: { all: Dash[]; pick: (id: string) => void }) {
   return (
-    <div className="mb-4 grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-3.5">
-      {all.map((d) => (
-        <button key={d.id} onClick={() => pick(d.id)} className="rounded-[var(--radius)] border border-border bg-card p-4 text-left hover:border-gold">
-          <small className="flex items-center justify-between text-xs text-muted-foreground">{d.title}{d.sample && <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">sample</span>}</small>
-          <b className="mt-1 block font-display text-2xl">{d.kpis[0][1]}</b>
-          <span className="text-xs text-muted-foreground">{d.kpis[0][0]}</span>
-          <p className="mt-2 text-[13px] leading-snug">{d.insights[0]}</p>
-        </button>
+    <div className="grid gap-6 md:grid-cols-2">
+      {GROUPS.map(([name, ids]) => (
+        <Card key={name} title={name}>
+          <ul className="m-0 list-none divide-y divide-border/60 p-0">
+            {ids.map((id) => all.find((d) => d.id === id)!).map((d) => (
+              <li key={d.id}>
+                <button onClick={() => pick(d.id)} className="flex min-h-12 w-full items-center justify-between gap-4 rounded-lg px-1 text-left hover:bg-muted/60">
+                  <span>{d.title}{d.sample && <span className="ml-2 text-sm text-muted-foreground">sample</span>}</span>
+                  <b className="font-display text-lg tabular-nums">{d.kpis[0][1]}</b>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Card>
       ))}
     </div>
   );
 }
 
-export default function Dashboards() {
+const pill = (on: boolean) => cx("min-h-10 rounded-full border px-4 font-semibold", on ? "border-primary bg-primary text-white" : "border-border bg-card text-muted-foreground hover:bg-muted");
+
+function Page() {
   const { s } = useStore();
-  const [id, setId] = useState(OVERVIEW);
-  const [f, setF] = useState<Filter>({ months: 6, channel: "All" });
+  const router = useRouter();
+  const q = useSearchParams();
+  const p = +(q.get("p") ?? 6);
+  const f: Filter = { months: [1, 3, 6].includes(p) ? p : 6, channel: (["Retail", "Online", "HNI", "Corporate"].includes(q.get("c") ?? "") ? q.get("c") : "All") as Channel | "All" };
   const all = build(s, f);
-  const d = all.find((x) => x.id === id);
+  const d = all.find((x) => x.id === q.get("v"));
+  const group = GROUPS.find(([, ids]) => d && ids.includes(d.id));
+  const go = (patch: Record<string, string | number | null>) => {
+    const n = new URLSearchParams(q.toString());
+    for (const [k, v] of Object.entries(patch)) { if (v === null || v === "All") n.delete(k); else n.set(k, String(v)); }
+    router.replace("/dashboards" + (n.size ? "?" + n : ""), { scroll: false });
+  };
   const sel = "h-10 pointer-coarse:h-11 rounded-lg border border-border bg-card px-2.5";
 
   return (
     <>
-      <PageHeader title="Analytics dashboards" sub="An overview and twelve detailed views, all fed from the database. Views marked sample use made-up figures.">
-        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">Period
-          <select aria-label="Period" className={sel} value={f.months} onChange={(e) => setF({ ...f, months: +e.target.value })}>
+      <PageHeader title="Analytics dashboards" sub="Twelve views from the database. Only the manufacturing cycle times are sample figures.">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">Period
+          <select aria-label="Period" className={sel} value={f.months} onChange={(e) => go({ p: e.target.value === "6" ? null : e.target.value })}>
             <option value={1}>This month</option><option value={3}>Last 3 months</option><option value={6}>Last 6 months</option>
           </select>
         </label>
-        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">Channel
-          <select aria-label="Channel" className={sel} value={f.channel} onChange={(e) => setF({ ...f, channel: e.target.value as Channel | "All" })}>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">Channel
+          <select aria-label="Channel" className={sel} value={f.channel} onChange={(e) => go({ c: e.target.value })}>
             {["All", "Retail", "Online", "HNI", "Corporate"].map((c) => <option key={c}>{c}</option>)}
           </select>
         </label>
       </PageHeader>
-      <div className="mb-4 flex flex-wrap gap-1.5" role="tablist">
-        {[{ id: OVERVIEW, title: "Overview" }, ...all].map((x) => (
-          <button key={x.id} role="tab" aria-selected={x.id === id} onClick={() => setId(x.id)}
-            className={cx("min-h-9 rounded-full border px-3 text-[13px] font-semibold", x.id === id ? "border-gold bg-gold-light text-gold" : "border-border bg-card text-muted-foreground hover:bg-muted")}>{x.title}</button>
-        ))}
+      <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Dashboard group">
+        <button aria-pressed={!d} onClick={() => go({ v: null })} className={pill(!d)}>Overview</button>
+        {GROUPS.map(([name, ids]) => <button key={name} aria-pressed={group?.[0] === name} onClick={() => go({ v: ids[0] })} className={pill(group?.[0] === name)}>{name}</button>)}
       </div>
-      <p className="mb-3 text-xs text-muted-foreground">Period and channel filters change the sales, finance, customer and fast-mover views. Stock views always show today.</p>
+      {group ? (
+        <div className="mb-8 flex flex-wrap gap-x-6 gap-y-1 border-b border-border/60" role="tablist" aria-label={group[0]}>
+          {group[1].map((id) => {
+            const x = all.find((z) => z.id === id)!;
+            return (
+              <button key={id} role="tab" aria-selected={id === d?.id} onClick={() => go({ v: id })}
+                className={cx("-mb-px min-h-10 border-b-2 px-1 font-semibold", id === d?.id ? "border-gold text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}>{x.title}</button>
+            );
+          })}
+        </div>
+      ) : <div className="mb-8" />}
 
-      {!d ? <Overview all={all} pick={setId} /> : (
+      {!d ? <Overview all={all} pick={(id) => go({ v: id })} /> : (
         <>
-          <h2 className="mb-0.5 text-xl font-semibold">{d.title}{d.sample && <span className="ml-2 rounded-full bg-muted px-2 py-0.5 align-middle text-xs font-medium text-muted-foreground">sample figures</span>}</h2>
-          <p className="mb-3 text-muted-foreground">{d.about}</p>
+          <h2 className="mb-1 text-xl font-semibold">{d.title}{d.sample && <span className="ml-3 rounded-full bg-muted px-2.5 py-0.5 align-middle text-sm font-medium text-muted-foreground">sample figures</span>}</h2>
+          <p className="mb-8 text-muted-foreground">{d.about} Period and channel change the sales, finance, customer and fast-mover views.</p>
           <Kpis items={d.kpis} />
-          <div className="mb-3.5"><Insights list={d.insights} /></div>
-          <div className="mb-3.5 grid items-start gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr))]">
+          <div className="mb-8 grid items-start gap-6 lg:grid-cols-2">
+            <Insights list={d.insights} />
+            <Alerts list={d.alerts} />
+          </div>
+          <div className="mb-8 grid items-start gap-6 [grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr))]">
             {d.charts.map((c) => <ChartView key={c.title} c={c} />)}
           </div>
-          <div className="mb-2 mt-5 flex items-center justify-between gap-3">
+          <div className="mb-4 mt-10 flex items-center justify-between gap-3">
             <h3 className="text-lg font-semibold">{d.table.title} <span className="text-sm font-normal text-muted-foreground">({d.table.rows.length})</span></h3>
             <Btn sm onClick={() => csv(d)}>Export CSV</Btn>
           </div>
@@ -156,4 +208,8 @@ export default function Dashboards() {
       )}
     </>
   );
+}
+
+export default function Dashboards() {
+  return <Suspense fallback={null}><Page /></Suspense>;
 }

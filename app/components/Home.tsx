@@ -9,6 +9,7 @@ import { findPiece } from "../lib/search";
 import { g } from "../lib/calc";
 import type { Level, Todo } from "../lib/home";
 import { Badge, Btn, Card, cx, type Kind } from "./ui";
+import { Tile } from "./kit";
 
 const LEVEL: Record<Level, [string, Kind]> = { blocked: ["Blocked", "bad"], decision: ["Decision", "warn"], todo: ["To do", "info"] };
 const linkBtn = "inline-flex min-h-10 items-center justify-center rounded-lg border border-border bg-card px-4 text-sm font-semibold hover:bg-muted pointer-coarse:min-h-11";
@@ -25,13 +26,13 @@ export function ScanField() {
     else { say(`Nothing found for ${v.trim()}. Check the tag, HUID, certificate or order number.`); box.current?.select(); }
   };
   return (
-    <div className="mb-4 rounded-[var(--radius)] border border-border bg-card p-3 md:p-4">
-      <label htmlFor="scan-home" className="mb-1.5 block font-semibold">Trace a piece</label>
+    <div className="mb-10">
+      <label htmlFor="scan-home" className="sr-only">Trace a piece</label>
       <div className="relative">
         <ScanLine className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
         <input id="scan-home" ref={box} autoFocus autoComplete="off" placeholder="Scan the tag, or type a tag, HUID, certificate or order number"
           onKeyDown={(e) => { if (e.key === "Enter") go(e.currentTarget.value); }}
-          className="h-14 w-full rounded-lg border border-border bg-background pl-11 pr-3 text-base outline-none focus:border-gold focus:ring-[3px] focus:ring-gold/20" />
+          className="h-14 w-full rounded-2xl border border-border bg-card pl-11 pr-3 text-base outline-none focus:border-gold focus:ring-[3px] focus:ring-gold/20" />
       </div>
     </div>
   );
@@ -43,26 +44,26 @@ export function NeedsYou({ items, clear }: { items: Todo[]; clear: string }) {
   const [all, setAll] = useState(false);
   const shown = all ? items : items.slice(0, 5);
   return (
-    <section aria-labelledby="needs-you" className="rounded-[var(--radius)] border border-border bg-card">
-      <div className="flex items-baseline justify-between gap-3 px-4 pt-4">
+    <section aria-labelledby="needs-you" className="rounded-2xl border border-border bg-card shadow-[0_1px_2px_rgba(4,53,68,0.04)]">
+      <div className="flex items-baseline justify-between gap-3 px-6 pt-6">
         <h2 id="needs-you" className="text-lg font-semibold">Needs you</h2>
         {items.length > 0 && <span className="text-muted-foreground">{items.length} open</span>}
       </div>
       {!items.length ? (
-        <p className="px-4 pb-5 pt-2 text-muted-foreground">{clear}</p>
+        <p className="px-6 pb-6 pt-2 text-muted-foreground">{clear}</p>
       ) : (
-        <ul className="mt-2 divide-y divide-border">
+        <ul className="mt-3 divide-y divide-border/60">
           {shown.map((t) => (
-            <li key={t.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+            <li key={t.id} className="flex flex-wrap items-center gap-x-5 gap-y-2 px-6 py-4">
               <span className="w-[5.25rem] flex-none"><Badge kind={LEVEL[t.level][1]}>{LEVEL[t.level][0]}</Badge></span>
               <div className="min-w-[13rem] flex-1">
                 <div className="font-medium">{t.what}</div>
-                <div className="text-[13px] text-muted-foreground">{t.meta}</div>
+                <div className="text-sm text-muted-foreground">{t.meta}</div>
               </div>
               {t.decide ? (
-                <div className="flex gap-2">
-                  <Btn gold aria-label={`Approve: ${t.what}`} onClick={() => act((d) => decide(d, t.decide!, "approved"))}>Approve</Btn>
-                  <Btn aria-label={`Reject: ${t.what}`} onClick={() => act((d) => decide(d, t.decide!, "rejected"))}>Reject</Btn>
+                <div className="flex gap-5">
+                  <Btn gold aria-label={`Approve: ${t.what}`} onClick={() => act((d) => decide(d, t.decide!, "approved"), { undoable: true })}>Approve</Btn>
+                  <Btn className="border-transparent bg-transparent text-muted-foreground hover:bg-muted" aria-label={`Reject: ${t.what}`} onClick={() => act((d) => decide(d, t.decide!, "rejected"), { undoable: true })}>Reject</Btn>
                 </div>
               ) : (
                 <Link href={t.href} aria-label={`${t.cta}: ${t.what}`} className={linkBtn}>{t.cta}</Link>
@@ -72,8 +73,8 @@ export function NeedsYou({ items, clear }: { items: Todo[]; clear: string }) {
         </ul>
       )}
       {items.length > 5 && (
-        <div className="border-t border-border px-4 py-2">
-          <button className="min-h-10 font-semibold text-gold underline-offset-2 hover:underline pointer-coarse:min-h-11" onClick={() => setAll(!all)}>{all ? "Show fewer" : `Show all ${items.length}`}</button>
+        <div className="border-t border-border/60 px-6 py-2">
+          <button className="min-h-10 font-semibold text-primary underline-offset-2 hover:underline pointer-coarse:min-h-11" onClick={() => setAll(!all)}>{all ? "Show fewer" : `Show all ${items.length}`}</button>
         </div>
       )}
     </section>
@@ -81,28 +82,22 @@ export function NeedsYou({ items, clear }: { items: Todo[]; clear: string }) {
 }
 
 /** A few figures, each a link to where it comes from. */
-export function Facts({ items }: { items: { label: string; value: string; note: string; href: string }[] }) {
+export function Facts({ items }: { items: { label: string; value: string; note: string; href: string; alert?: boolean }[] }) {
   return (
-    <dl className="mb-4 grid divide-border rounded-[var(--radius)] border border-border bg-card sm:grid-cols-2 sm:divide-x lg:grid-cols-4 [&>*:nth-child(n+3)]:border-t [&>*:nth-child(n+3)]:border-border lg:[&>*:nth-child(n+3)]:border-t-0">
-      {items.map((f) => (
-        <Link key={f.label} href={f.href} className="block min-h-[4.75rem] px-4 py-3 hover:bg-muted">
-          <dt className="text-[13px] text-muted-foreground">{f.label}</dt>
-          <dd className="font-display text-2xl font-semibold tabular-nums">{f.value}</dd>
-          <dd className="text-[13px] text-muted-foreground">{f.note}</dd>
-        </Link>
-      ))}
-    </dl>
+    <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {items.map((f) => <Tile key={f.label} {...f} />)}
+    </div>
   );
 }
 
 /** Where every gram is right now. The bar is for a glance, the list carries the numbers. */
 export function GoldWhere({ parts }: { parts: { label: string; mg: number; href: string }[] }) {
   const total = Math.max(1, parts.reduce((a, p) => a + p.mg, 0));
-  const fill = ["bg-gold", "bg-gold-mid", "bg-muted-foreground"];
+  const fill = ["bg-primary", "bg-gold-dark", "bg-muted-foreground"];
   return (
     <Card title="Where the gold is">
-      <div role="img" aria-label={parts.map((p) => `${p.label} ${g(p.mg)}`).join(", ")} className="mb-3 flex h-3 overflow-hidden rounded-full bg-muted">
-        {parts.map((p, i) => <span key={p.label} className={fill[i]} style={{ width: (p.mg / total) * 100 + "%" }} />)}
+      <div role="img" aria-label={parts.map((p) => `${p.label} ${g(p.mg)}`).join(", ")} className="mb-3 flex h-3 gap-0.5 overflow-hidden rounded-full bg-muted">
+        {parts.map((p, i) => <span key={p.label} className={fill[i]} style={{ width: Math.max(2, (p.mg / total) * 100) + "%" }} />)}
       </div>
       <ul className="flex flex-col">
         {parts.map((p, i) => (
@@ -111,12 +106,12 @@ export function GoldWhere({ parts }: { parts: { label: string; mg: number; href:
               <span className={cx("size-2.5 flex-none rounded-full", fill[i])} aria-hidden />
               <span className="flex-1">{p.label}</span>
               <span className="tabular-nums">{g(p.mg)}</span>
-              <span className="w-10 text-right text-[13px] tabular-nums text-muted-foreground">{Math.round((p.mg / total) * 100)}%</span>
+              <span className="w-10 text-right text-sm tabular-nums text-muted-foreground">{Math.round((p.mg / total) * 100)}%</span>
             </Link>
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-[13px] text-muted-foreground">Fine gold. Every card links to its ledger.</p>
+      <p className="mt-2 text-sm text-muted-foreground">Fine gold. Every card links to its ledger.</p>
     </Card>
   );
 }
@@ -136,6 +131,26 @@ export function Pipeline({ steps }: { steps: { label: string; n: number; href: s
           </li>
         ))}
       </ol>
+    </Card>
+  );
+}
+
+/** The latest things done in the system, from the audit log. */
+export function ActivityFeed({ log }: { log: { t: string; u: string; text: string }[] }) {
+  return (
+    <Card title="Recent activity">
+      <ul className="m-0 flex list-none flex-col gap-4 p-0">
+        {log.slice(0, 5).map((l, i) => (
+          <li key={i} className="flex gap-3">
+            <span className="mt-0.5 grid size-8 flex-none place-items-center rounded-full bg-muted text-xs font-bold text-primary">{l.u.split(" ").map((w) => w[0]).slice(0, 2).join("")}</span>
+            <div className="min-w-0">
+              <p className="leading-snug">{l.text}</p>
+              <p className="text-sm text-muted-foreground">{l.u}, {l.t}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <Link href="/audit" className="mt-4 inline-flex min-h-10 items-center font-semibold text-primary hover:underline">View full audit log</Link>
     </Card>
   );
 }
