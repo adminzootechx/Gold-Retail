@@ -92,7 +92,7 @@ export default function Frame({ children }: { children: React.ReactNode }) {
       <a href="#main" className="no-print sr-only z-50 rounded-lg bg-foreground px-4 py-2 font-semibold text-background focus:not-sr-only focus:fixed focus:left-3 focus:top-3">Skip to main content</a>
       {/* While the drawer floats over the page it leaves the grid, so this keeps the icon rail's column and the page stays put. */}
       {open && <div className="hidden md:block lg:hidden" aria-hidden />}
-      <aside className={cx("no-print z-40 flex min-h-0 flex-col overflow-hidden bg-frame text-white max-md:transition-transform max-md:duration-300 max-md:ease-out", open ? "drawer-in max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:w-56 max-lg:shadow-xl" : "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:w-56 max-md:-translate-x-full")}>
+      <aside className={cx("no-print z-40 flex min-h-0 flex-col overflow-hidden bg-frame text-white antialiased max-md:transition-transform max-md:duration-300 max-md:ease-out", open ? "drawer-in max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:w-56 max-lg:shadow-xl" : "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:w-56 max-md:-translate-x-full")}>
         <div className="flex h-16 flex-none items-center gap-1 pl-3.5 pr-1.5">
         <Link href="/" aria-label="AKOIRAH home" className={cx("flex min-w-0 flex-1 items-center gap-2.5", collapsed && "lg:hidden")}>
           <div className="grid size-8 flex-none place-items-center rounded-full border-[1.5px] border-gold-mid font-display text-sm font-bold text-gold-mid">A</div>
@@ -118,7 +118,7 @@ export default function Frame({ children }: { children: React.ReactNode }) {
             const on = path === href;
             return (
               <Link key={href} href={href} onClick={() => { setOpen(false); setCollapsed(false); }} title={label} aria-current={on ? "page" : undefined}
-                className={cx("mb-0.5 flex min-h-11 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 text-[15px] font-semibold", collapsed && "lg:justify-center", !open && "md:max-lg:justify-center", on ? "bg-white text-primary" : "text-white/85 hover:bg-white/10 hover:text-white")}>
+                className={cx("mb-0.5 flex min-h-11 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 text-[15px] font-medium", collapsed && "lg:justify-center", !open && "md:max-lg:justify-center", on ? "bg-white text-primary" : "text-white/85 hover:bg-white/10 hover:text-white")}>
                 <Icon className="size-4 flex-none" aria-hidden />
                 <span className={rail("")}>{label}</span>
               </Link>
@@ -139,7 +139,7 @@ export default function Frame({ children }: { children: React.ReactNode }) {
                     if (rail) { setCollapsed(false); setOpen(window.innerWidth < 1024); setFold({ ...fold, [group]: true }); }
                     else setFold({ ...fold, [group]: !expanded });
                   }}
-                  className={cx("mt-1.5 flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px] font-semibold hover:bg-white/10", collapsed && "lg:justify-center", !open && "md:max-lg:justify-center", hasActive ? "text-white" : "text-white/80", hasActive && collapsed && "lg:bg-white/15")}>
+                  className={cx("mt-1.5 flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px] font-medium hover:bg-white/10", collapsed && "lg:justify-center", !open && "md:max-lg:justify-center", hasActive ? "text-white" : "text-white/80", hasActive && collapsed && "lg:bg-white/15")}>
                   {(() => { const GI = GROUP_ICONS[group]; return <GI className={cx("hidden size-4 flex-none", collapsed && "lg:block", !open && "md:max-lg:block")} aria-hidden />; })()}
                   <span className={rail("flex-1 whitespace-nowrap")}>{group}</span>
                   <ChevronDown className={rail(cx("size-4 transition-transform", expanded && "rotate-180"))} aria-hidden />
@@ -149,7 +149,7 @@ export default function Frame({ children }: { children: React.ReactNode }) {
                   const on = path === href;
                   return (
                     <Link key={href} href={href} onClick={() => setOpen(false)} title={label} aria-current={on ? "page" : undefined}
-                      className={cx("flex min-h-10 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-normal text-white/60 hover:bg-white/10 hover:text-white pointer-coarse:min-h-11", collapsed && "lg:justify-center", !open && "md:max-lg:justify-center", on && "bg-white/15 font-medium text-white relative before:absolute before:-left-2.5 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-white")}>
+                      className={cx("flex min-h-10 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-normal text-white/60 hover:bg-white/10 hover:text-white pointer-coarse:min-h-11", collapsed && "lg:justify-center", !open && "md:max-lg:justify-center", on && "bg-white/15 text-white relative before:absolute before:-left-2.5 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-white")}>
                       <span className={rail("whitespace-nowrap")}>{label}</span>
                     </Link>
                   );
