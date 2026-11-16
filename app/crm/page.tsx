@@ -28,7 +28,7 @@ export default function Crm() {
 
   return (
     <>
-      <PageHeader title="CRM" sub="Customers, segments and campaigns." />
+      <PageHeader title="CRM & Marketing" sub="Customers, segments and campaigns." />
       <Tabs<Tab> tabs={[["customers", "Customers"], ["segments", "Segments"], ["campaign", "Campaign builder"], ["log", "Message log"]]} value={tab} onChange={setTab} />
 
       {tab === "customers" && (

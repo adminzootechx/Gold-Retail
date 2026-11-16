@@ -157,8 +157,7 @@ function Page() {
   const go = (patch: Record<string, string | number | null>) => {
     const n = new URLSearchParams(q.toString());
     for (const [k, v] of Object.entries(patch)) { if (v === null || v === "All") n.delete(k); else n.set(k, String(v)); }
-    n.set("view", "analytics");
-    router.replace("/?" + n, { scroll: false });
+    router.replace("/dashboards?" + n, { scroll: false });
   };
   const FILTERED = ["sales", "finance", "ledgers", "customer", "fast"];
   const filterable = !!d && FILTERED.includes(d.id);

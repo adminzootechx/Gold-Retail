@@ -1,15 +1,4 @@
-"use client";
-import { useStore } from "../lib/store";
-import { PageHeader, Table, Tr } from "../components/ui";
+import { redirect } from "next/navigation";
 
-export default function Audit() {
-  const { s } = useStore();
-  return (
-    <>
-      <PageHeader title="Audit log" sub="Who did what, and when." />
-      <Table head={["When", "Who", "What"]}>
-        {s.log.map((l, i) => <Tr key={i} cells={[l.t, l.u, l.text]} />)}
-      </Table>
-    </>
-  );
-}
+/** The audit log is a tab of Security & Approval Matrix. Old links land there. */
+export default function Page() { redirect("/security?tab=audit"); }

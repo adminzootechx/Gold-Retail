@@ -10,6 +10,8 @@ export interface Item {
   huid: string; cert: string; loc: string; status: Status;
   jc: string; lot: string; price: number;
   order?: string; cust?: string; inv?: string; memo?: string; to?: string;
+  /** What actually happened to the piece, as [day, text]. Pieces made in the app carry their whole history here. */
+  ev?: [string, string][]; real?: boolean;
 }
 export interface Design { id: string; name: string; origin: string; stage: number; owner: string; lockPending?: boolean }
 export interface Sku { code: string; name: string; design: string; variants: string[]; cert: string }
@@ -17,19 +19,22 @@ export interface JobCard {
   id: string; vendor: string; sku: string; qty: number;
   issued: number; pieces: number; scrap: number; stI: number; stSet: number; stRet: number;
   state: "Received" | "At vendor" | "Closed"; lot: string; approved?: boolean;
+  /** The made-to-order sale this card is making a piece for, and the day it was opened. */
+  order?: string; opened?: string;
 }
 export interface Inward {
   sent?: boolean;
   id: string; jc: string; sku: string; name: string; variant: string;
   gross: number; stones: number; need: boolean; done: number[];
   huid: string | null; rew: number | null; tag: string | null;
+  ev?: [string, string][]; stone?: string;
 }
 export interface Approval {
   id: string; type: string; ref: string; by: Role | string; detail: string;
-  value: number | null; state: "pending" | "approved" | "rejected"; design?: string;
+  value: number | null; state: "pending" | "approved" | "rejected"; design?: string; tag?: string;
 }
 export interface Repair { id: string; tag: string; issue: string; state: number; quote: number }
-export interface Order { id: string; cust: string; sku: string; variant: string; state: number; item: string | null; mto?: boolean; notes: string[] }
+export interface Order { id: string; cust: string; sku: string; variant: string; state: number; item: string | null; mto?: boolean; jc?: string; notes: string[] }
 export interface LogRow { t: string; u: string; text: string }
 export interface Lot { id: string; fine: number }
 export interface PO { id: string; supplier: string; what: string; qty: string; value: number; state: "Draft" | "Pending approval" | "Sent" | "Received" }
@@ -39,7 +44,7 @@ export interface Customer { id: string; name: string; city: string; segment: "Re
 export interface Invoice { id: string; date: string; channel: Channel; store: string; custId: string; amount: number; paid: number; tags: string[]; sku?: string }
 
 /** Saved forms: BOMs, pricing, certificate rules, goods receipts, slips, vouchers, rates, rules, walk-ins, requests and profiles. */
-export type RecKind = "bom" | "price" | "certreq" | "grn" | "qc" | "slip" | "ret" | "voucher" | "rate" | "walkin" | "rule" | "pr" | "profile";
+export type RecKind = "bom" | "price" | "certreq" | "grn" | "qc" | "slip" | "ret" | "voucher" | "rate" | "walkin" | "rule" | "pr" | "profile" | "stone" | "melee" | "cstone" | "finding" | "pack" | "hni";
 export interface Rec { id: string; kind: RecKind; date: string; by: string; f: Record<string, string> }
 
 export interface State {
@@ -110,6 +115,17 @@ function seedRecords(skus: Sku[]): Rec[] {
     out.push(rec("PRC-" + (i + 1), "price", { sku: k.code, v: "1", making: String(12000 + i * 1800), margin: String(20 + (i % 3) * 2) }, "Founder"));
     out.push(rec("CRQ-" + (i + 1), "certreq", { sku: k.code, v: "1", igi: i % 5 === 3 ? "no" : "yes", sgl: "no", huid: "yes" }, "Production manager"));
   });
+  // Raw material registers. Certified singles and colour stones are tracked one by one, melee by lot, findings and packaging by count.
+  [["IGI LG6120451", "Round", "0.70 ct", "E", "VS1", "Set in AK-RNG-014-0001"], ["IGI LG6120470", "Round", "0.72 ct", "F", "VS1", "In vault"], ["IGI LG6120471", "Oval", "1.01 ct", "E", "VVS2", "In vault"], ["SGL 77140", "Round", "0.50 ct", "G", "VS2", "Reserved JC-2412"]]
+    .forEach(([no, shape, weight, colour, clarity, where], i) => out.push(rec("ST-" + (i + 1), "stone", { no, shape, weight, colour, clarity, where }, "Production manager")));
+  [["ML-S-118", "Round 1.0 mm", "412", "4.12", "VS-EF"], ["ML-S-121", "Round 1.3 mm", "260", "5.20", "VS-EF"], ["ML-S-124", "Baguette", "90", "1.35", "VS-FG"]]
+    .forEach(([lot, type, pcs, ct, grade], i) => out.push(rec("ML-" + (i + 1), "melee", { lot, type, pcs, ct, grade }, "Production manager")));
+  [["CS-101", "Emerald, lab-grown", "3", "2.40", "In vault"], ["CS-102", "Blue sapphire, lab-grown", "5", "3.10", "In vault"], ["CS-103", "Ruby, lab-grown", "2", "1.20", "Reserved JC-2412"]]
+    .forEach(([lot, type, pcs, ct, where], i) => out.push(rec("CS-" + (i + 1), "cstone", { lot, type, pcs, ct, where }, "Production manager")));
+  [["Prong settings 18K", "1240", "400"], ["Bails 18K", "180", "200"], ["Clasps (lobster)", "320", "150"], ["Earring posts 18K", "90", "300"]]
+    .forEach(([item, stock, reorder], i) => out.push(rec("FD-" + (i + 1), "finding", { item, stock, reorder }, "Production manager")));
+  [["Ring box, black", "460", "150"], ["Pendant pouch", "210", "100"], ["Gift sleeve", "75", "200"]]
+    .forEach(([item, stock, reorder], i) => out.push(rec("PK-" + (i + 1), "pack", { item, stock, reorder }, "Production manager")));
   out.push(rec("GRN-0457", "grn", { po: "PO-3309", supplier: "Pack & Pride", ordered: "300 pcs", received: "300 pcs", diff: "0", result: "Matched", lot: "-" }, "Production manager", "2026-11-04"));
   out.push(rec("RV-101", "voucher", { type: "Receipt", party: "Anand Jewellers, Pune", amount: "250000", mode: "Bank transfer", ref: "-" }, "Accounts", "2026-11-09"));
   return out;
@@ -215,15 +231,15 @@ export function seed(): Stored {
     invoices,
     items,
     designs: [
-      { id: "D-118", name: "Halo solitaire ring", origin: "Client", stage: 3, owner: "Meera" },
+      { id: "D-118", name: "Halo solitaire ring", origin: "Client", stage: 4, owner: "Meera" },
       { id: "D-121", name: "Lotus stud earrings", origin: "Social media", stage: 1, owner: "Arjun" },
       { id: "D-122", name: "Arc pendant, rose gold", origin: "Founder", stage: 2, owner: "Meera" },
       { id: "D-123", name: "Cuff bracelet", origin: "Design team", stage: 0, owner: "Arjun" },
       { id: "D-124", name: "Pearl-and-diamond drop", origin: "Client", stage: 0, owner: "Meera" },
       { id: "D-125", name: "Signet ring, lab emerald", origin: "Founder", stage: 2, owner: "Arjun" },
-      { id: "D-109", name: "Tennis bracelet", origin: "Design team", stage: 5, owner: "Meera" },
-      { id: "D-112", name: "Cluster necklace", origin: "Founder", stage: 5, owner: "Arjun" },
-      { id: "D-115", name: "Stud earrings", origin: "Design team", stage: 5, owner: "Arjun" },
+      { id: "D-109", name: "Tennis bracelet", origin: "Design team", stage: 7, owner: "Meera" },
+      { id: "D-112", name: "Cluster necklace", origin: "Founder", stage: 7, owner: "Arjun" },
+      { id: "D-115", name: "Stud earrings", origin: "Design team", stage: 7, owner: "Arjun" },
     ],
     skus: CATALOG.map((c) => ({ code: c.code, name: c.name, design: c.design, variants: c.variants, cert: c.cert })),
     jcs: [
@@ -245,7 +261,7 @@ export function seed(): Stored {
     approvals: [
       { id: "AP-41", type: "Discount over 10%", ref: "HNI order HN-208", by: "Store manager", detail: "12% on 18K Halo ring set", value: null, state: "pending" },
       { id: "AP-42", type: "Purchase order", ref: "PO-3316", by: "Procurement", detail: "Lab-grown melee, 14 ct", value: 620000, state: "pending" },
-      { id: "AP-43", type: "Refund", ref: "RF-88", by: "Store manager", detail: "Arc pendant, wrong length", value: 64000, state: "pending" },
+      { id: "AP-43", type: "Refund", ref: "RF-88", by: "Store manager", detail: "Arc pendant, wrong length", value: 64000, state: "pending", tag: "AK-PND-007-0003" },
       { id: "AP-39", type: "Final CAD lock", ref: "D-115", by: "Design head", detail: "Stud earrings", value: null, state: "approved", design: "D-115" },
       { id: "AP-38", type: "Metal variance", ref: "JC-2402", by: "Production manager", detail: "0.012 g beyond allowed wastage", value: null, state: "approved" },
     ],
@@ -256,6 +272,7 @@ export function seed(): Stored {
       { id: "RP-290", tag: "AK-EAR-030-0001", issue: "Post replaced", state: 7, quote: 900 },
     ],
     orders: [
+      { id: "WEB-5026", cust: "Aarti Rao", sku: "AK-RNG-021", variant: "18K Rose", state: 0, item: null, notes: [] }, // not in stock anywhere, so it is made to order
       { id: "WEB-5024", cust: "Kavya Nair", sku: "AK-PND-007", variant: "18K Rose", state: 0, item: null, notes: [] },
       { id: "WEB-5023", cust: "Dev Malhotra", sku: "AK-NCK-009", variant: "18K Yellow", state: 0, item: null, notes: [] },
       { id: "WEB-5022", cust: "Isha Verma", sku: "AK-BNG-003", variant: "18K Rose", state: 0, item: null, notes: [] },

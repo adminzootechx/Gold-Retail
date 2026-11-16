@@ -7,7 +7,7 @@ import {
   ArrowDownRight, ArrowUpRight, Bell, ChevronLeft, ChevronRight, Menu, Package, PackageCheck, PenTool, Play, Receipt, ScrollText, Search, ShieldCheck, ShoppingCart, Store, Users, Wrench, type LucideIcon,
 } from "lucide-react";
 import { useStore } from "../lib/store";
-import { ALL_MODS, MODS, TOP, allowed, firstAllowed } from "../lib/modules";
+import { ALL_MODS, SECTIONS, allowed, firstAllowed } from "../lib/modules";
 import { RATE24, inr } from "../lib/calc";
 import { findPiece } from "../lib/search";
 import { applyPrefs, usePrefs } from "../lib/prefs";
@@ -24,12 +24,12 @@ import { cx } from "./ui";
 const ICONS: Record<string, LucideIcon> = {
   "/": House, "/demo": Play, "/dashboards": BarChart3, "/security": Users, "/trace": Search, "/design": PenTool, "/products": Package, "/planning": ClipboardList,
   "/raw-material": Gem, "/procurement": ShoppingCart, "/job-work": Hammer, "/inward": PackageCheck, "/inventory": Boxes,
-  "/sales": Receipt, "/stores": Store, "/ecommerce": Globe, "/after-sales": Wrench, "/consignment": Package,
+  "/sales": Receipt, "/stores": Store, "/ecommerce": Globe, "/repairs": Wrench, "/exchange": Gem, "/refunds": Receipt, "/consignment": Package,
   "/finance": Landmark, "/crm": Handshake, "/reports": ScrollText, "/approvals": ShieldCheck, "/audit": ClipboardList,
 };
 
 const GROUP_ICONS: Record<string, LucideIcon> = {
-  Tools: Search, Design: PenTool, Production: Hammer, Customers: Handshake, Admin: ShieldCheck,
+  Tools: Search, Design: PenTool, Production: Hammer, "After-sales": Wrench, Admin: ShieldCheck,
 };
 
 const control = "h-10 pointer-coarse:h-11 rounded-lg border border-border";
@@ -87,6 +87,20 @@ export default function Frame({ children }: { children: React.ReactNode }) {
     else if (v.trim()) { act(() => `Nothing found for ${v.trim()}. Check the tag, HUID, certificate or order number.`); find.current?.select(); }
   };
 
+  // A standalone sidebar item.
+  const tile = (href: string, label: string) => {
+    if (!allowed(s.role, href)) return null;
+    const Icon = ICONS[href];
+    const on = path === href;
+    return (
+      <Link key={href} href={href} onClick={() => { setOpen(false); setCollapsed(false); }} title={label} aria-current={on ? "page" : undefined}
+        className={cx("mb-0.5 flex min-h-11 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 text-[15px] font-normal", collapsed && "lg:justify-center", !open && "md:max-lg:justify-center", on ? "bg-white text-primary" : "text-white/85 hover:bg-white/10 hover:text-white")}>
+        <Icon className="size-4 flex-none" aria-hidden />
+        <span className={rail("")}>{label}</span>
+      </Link>
+    );
+  };
+
   return (
     <div className={cx("app-shell grid h-dvh bg-frame transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none", "grid-cols-[minmax(0,1fr)] md:grid-cols-[64px_minmax(0,1fr)]", collapsed ? "lg:grid-cols-[64px_minmax(0,1fr)]" : "lg:grid-cols-[208px_minmax(0,1fr)]")}>
       <a href="#main" className="no-print sr-only z-50 rounded-lg bg-foreground px-4 py-2 font-semibold text-background focus:not-sr-only focus:fixed focus:left-3 focus:top-3">Skip to main content</a>
@@ -113,19 +127,11 @@ export default function Frame({ children }: { children: React.ReactNode }) {
         </button>
         </div>
         <nav aria-label="Modules" className="sleek-scroll flex-1 overflow-y-auto overflow-x-hidden px-2 pb-4 pt-2.5">
-          {[["/", "Home", ""] as const, ...TOP.filter((m) => allowed(s.role, m[0]))].map(([href, label]) => {
-            const Icon = ICONS[href];
-            const on = path === href;
-            return (
-              <Link key={href} href={href} onClick={() => { setOpen(false); setCollapsed(false); }} title={label} aria-current={on ? "page" : undefined}
-                className={cx("mb-0.5 flex min-h-11 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 text-[15px] font-normal", collapsed && "lg:justify-center", !open && "md:max-lg:justify-center", on ? "bg-white text-primary" : "text-white/85 hover:bg-white/10 hover:text-white")}>
-                <Icon className="size-4 flex-none" aria-hidden />
-                <span className={rail("")}>{label}</span>
-              </Link>
-            );
-          })}
+          {tile("/", "Home")}
           <div className="mx-2 my-2 border-t border-white/10" />
-          {MODS.map(([group, mods]) => {
+          {SECTIONS.map((sec) => {
+            if (sec.tile) return tile(sec.tile[0], sec.tile[1]);
+            const [group, mods] = sec.group;
             const list = mods.filter((m) => allowed(s.role, m[0]));
             if (!list.length) return null;
             const hasActive = list.some((m) => m[0] === path);

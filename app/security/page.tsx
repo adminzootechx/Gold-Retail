@@ -1,20 +1,30 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useStore } from "../lib/store";
 import { ALL_MODS, ROLES, allowed } from "../lib/modules";
 import { Btn, Field, PageHeader, Tabs, inputCls } from "../components/ui";
 import { Grid, Pill } from "../components/kit";
 import { USERS } from "../lib/mock";
 import { saveRules } from "../lib/actions3";
+import { decide } from "../lib/actions";
+import { inr } from "../lib/calc";
+import { Badge } from "../components/ui";
 import { ofKind } from "../lib/records";
 import type { Role } from "../lib/data";
 
-type Tab = "users" | "permissions" | "rules" | "audit";
+type Tab = "approvals" | "users" | "permissions" | "rules" | "audit";
 
-export default function Security() {
+function Security() {
   const { s, act } = useStore();
+  const asked = useSearchParams().get("tab") as Tab | null;
   const rules = ofKind(s.records, "rule");
-  const [tab, setTab] = useState<Tab>("users");
+  const all: [Tab, string][] = [["approvals", "Pending approvals"], ["users", "Users"], ["permissions", "Permission grid"], ["rules", "Approval rules"], ["audit", "Audit log"]];
+  // The founder runs the whole matrix. Others decide requests, and the production manager also reads the audit log.
+  const tabs = s.role === "Founder" ? all : all.filter((t) => t[0] === "approvals" || (t[0] === "audit" && s.role === "Production manager"));
+  const [picked, setTab] = useState<Tab | null>(null);
+  const want = picked ?? asked;
+  const tab: Tab = tabs.some((t) => t[0] === want) ? want! : "approvals";
   const [who, setWho] = useState("");
   const [edits, setEdits] = useState<Record<string, string>>({});
   const limitOf = (id: string, saved: string) => edits[id] ?? saved;
@@ -24,8 +34,16 @@ export default function Security() {
 
   return (
     <>
-      <PageHeader title="Users and access" sub="Who can open what, and what needs approval." />
-      <Tabs<Tab> tabs={[["users", "Users"], ["permissions", "Permission grid"], ["rules", "Approval rules"], ["audit", "Audit log"]]} value={tab} onChange={setTab} />
+      <PageHeader title="Security & Approval Matrix" sub="Who can open what, what needs approval, and who decided." />
+      <Tabs<Tab> tabs={tabs} value={tab} onChange={setTab} />
+
+      {tab === "approvals" && (
+        <Grid head={["Request", "Type", "Reference", "Raised by", "Detail", "Value", "Decision"]} num={[5]}
+          rows={s.approvals.map((a) => [<span key="i" className="font-mono text-[12.5px]">{a.id}</span>, a.type, a.ref, a.by, a.detail, a.value ? inr(a.value) : "-",
+            a.state !== "pending" ? <Badge key="d" kind={a.state === "approved" ? "ok" : "bad"}>{a.state === "approved" ? "Approved" : "Rejected"}</Badge>
+            : a.by === s.role ? <span key="d" className="text-muted-foreground">Your own request</span>
+            : <span key="d" className="flex gap-1.5"><Btn gold sm onClick={() => act((d) => decide(d, a.id, "approved"))}>Approve</Btn><Btn sm onClick={() => act((d) => decide(d, a.id, "rejected"))}>Reject</Btn></span>])} />
+      )}
 
       {tab === "users" && <Grid head={["Name", "Email", "Role", "Status"]} rows={USERS.map((u) => [u.name, u.email, u.role, <Pill key="s">{u.state}</Pill>])} />}
 
@@ -50,4 +68,8 @@ export default function Security() {
       )}
     </>
   );
+}
+
+export default function SecurityPage() {
+  return <Suspense fallback={null}><Security /></Suspense>;
 }

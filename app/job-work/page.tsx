@@ -9,6 +9,7 @@ import { FormCard, Grid, Pill } from "../components/kit";
 import { VENDORS } from "../lib/mock";
 import { issueSlip, returnSlip } from "../lib/actions3";
 import { ofKind } from "../lib/records";
+import { NewJobCard } from "../components/Create";
 
 type Tab = "cards" | "vendors" | "issue" | "return" | "account" | "invoices";
 
@@ -17,6 +18,7 @@ function JobWork() {
   const isVendor = s.role.startsWith("Vendor");
   const [tab, setTab] = useState<Tab>("cards");
   const [sel, setSel] = useState(useSearchParams().get("jc") ?? "JC-2409");
+  const [creating, setCreating] = useState(false);
   const [acct, setAcct] = useState("Shree Karigar Works");
   const list = isVendor ? s.jcs.filter((j) => j.vendor === "Shree Karigar Works") : s.jcs;
   const j = list.find((x) => x.id === sel) ?? list[0];
@@ -31,7 +33,10 @@ function JobWork() {
 
   return (
     <>
-      <PageHeader title="Vendor job work" sub="Gold and stones per job card, to the milligram." />
+      <PageHeader title="Vendor Job Work" sub="Gold and stones per job card, to the milligram.">
+        {!isVendor && <Btn gold onClick={() => setCreating(true)}>New job card</Btn>}
+      </PageHeader>
+      <NewJobCard open={creating} onClose={() => setCreating(false)} />
       <Tabs<Tab> tabs={isVendor ? tabs.filter((t) => t[0] === "cards" || t[0] === "account") : tabs} value={tab} onChange={setTab} />
 
       {tab === "cards" && (
@@ -44,6 +49,7 @@ function JobWork() {
           </Table>
           <Card>
             <div className="mb-2.5 flex items-center justify-between"><h3 className="text-lg font-semibold">{j.id}</h3><span className="text-muted-foreground">{j.vendor}</span></div>
+            {j.order && <p className="mb-2 font-semibold text-primary">Making the piece for order {j.order}</p>}
             {j.state === "At vendor" ? (
               <>
                 <p className="mb-2 text-muted-foreground">Material is with the vendor. Reconciliation starts when pieces and scrap are received.</p>

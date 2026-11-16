@@ -7,6 +7,7 @@ import { ofKind } from "../lib/records";
 import { inr } from "../lib/calc";
 import { Btn, Card, Field, PageHeader, Rec, Tabs, inputCls } from "../components/ui";
 import { FormCard, Grid, Pill } from "../components/kit";
+import { NewPurchaseOrder, NewRequest } from "../components/Create";
 import { SUPPLIERS } from "../lib/mock";
 
 type Tab = "pr" | "po" | "grn" | "qc" | "bill";
@@ -15,6 +16,8 @@ export default function Procurement() {
   const { s, act } = useStore();
   const canDecide = s.role === "Founder" || s.role === "Production manager";
   const [tab, setTab] = useState<Tab>("pr");
+  const [req, setReq] = useState(false);
+  const [newPo, setNewPo] = useState(false);
   const open = s.pos.filter((p) => p.state === "Sent");
   const [po, setPo] = useState("PO-3312");
   const cur = s.pos.find((p) => p.id === po && p.state === "Sent") ?? open[0];
@@ -29,7 +32,12 @@ export default function Procurement() {
 
   return (
     <>
-      <PageHeader title="Procurement" sub="Request, order, receive, QC and bill match." />
+      <PageHeader title="Procurement" sub="Request, order, receive, QC and bill match.">
+        <Btn onClick={() => setReq(true)}>Raise purchase request</Btn>
+        <Btn gold onClick={() => setNewPo(true)}>New purchase order</Btn>
+      </PageHeader>
+      <NewRequest open={req} onClose={() => setReq(false)} />
+      <NewPurchaseOrder open={newPo} onClose={() => setNewPo(false)} />
       <Tabs<Tab> tabs={[["pr", "Purchase requests"], ["po", "Purchase orders"], ["grn", "GRN and weighing"], ["qc", "Inward QC"], ["bill", "Bill match"]]} value={tab} onChange={setTab} />
 
       {tab === "pr" && (

@@ -1,35 +1,40 @@
 "use client";
 import { useState } from "react";
 import { useStore } from "../lib/store";
-import { advanceDesign } from "../lib/actions";
+import Link from "../components/Go";
+import { DESIGN_STAGES, advanceDesign } from "../lib/actions";
+import { NewSku } from "../components/Create";
 import { addDesign } from "../lib/actions2";
 import { Badge, Btn, Card, PageHeader, Rec, Tabs } from "../components/ui";
 import { FormCard, Grid, Pill } from "../components/kit";
 import FilesCard from "../components/FilesCard";
 import type { Design } from "../lib/data";
 
-const COLS = ["Request", "CAD", "Review", "RPT", "Final CAD locked", "SKU created"];
-const LABEL = ["Start CAD", "Send for review", "Approve CAD, make RPT", "Lock final CAD", "Create SKU"];
+const COLS = DESIGN_STAGES;
+const LABEL = ["Start CAD", "Send for internal review", "Pass internal review", "Approve CAD, send to RPT", "Receive prototype", "Approve prototype, lock final CAD"];
 type Tab = "board" | "cad" | "rpt" | "new";
 
 export default function DesignPage() {
   const { s, act } = useStore();
   const [tab, setTab] = useState<Tab>("board");
   const [sel, setSel] = useState("D-118");
+  const [sku, setSku] = useState<string | null>(null);
   const d0 = s.designs.find((d) => d.id === sel) ?? s.designs[0];
   const action = (d: Design) =>
-    d.stage === 5 ? <Badge kind="ok">SKU live</Badge>
+    d.stage === 7 ? <span className="flex flex-wrap items-center gap-2"><Badge kind="ok">SKU live</Badge><Link href="/planning" className="font-semibold text-primary hover:underline">Plan production</Link></span>
+    : d.stage === 6 ? <Btn gold sm onClick={() => setSku(d.id)}>Create SKU</Btn>
     : d.lockPending ? <Badge kind="warn">Awaiting approval</Badge>
     : <Btn gold sm onClick={() => act((x) => advanceDesign(x, d.id))}>{LABEL[d.stage]}</Btn>;
 
   return (
     <>
-      <PageHeader title="Product design" sub="Design to SKU, from a locked final CAD." />
+      <PageHeader title="Product Development" sub="Design origin to CAD, RPT, final CAD lock and SKU." />
+      <NewSku open={!!sku} onClose={() => setSku(null)} design={sku ?? ""} />
       <Tabs<Tab> tabs={[["board", "Design board"], ["cad", "CAD versions"], ["rpt", "RPT tracker"], ["new", "New design request"]]} value={tab} onChange={setTab} />
 
       {tab === "board" && (
         <>
-          <div className="grid grid-cols-[repeat(6,minmax(190px,1fr))] gap-3 overflow-x-auto pb-2">
+          <div className="grid grid-cols-[repeat(8,minmax(200px,1fr))] gap-3 overflow-x-auto pb-2">
             {COLS.map((c, i) => {
               const list = s.designs.filter((d) => d.stage === i);
               return (
@@ -48,7 +53,7 @@ export default function DesignPage() {
           </div>
           <div className="mt-3.5 grid gap-3.5 lg:grid-cols-2">
             <Card title={`Design detail, ${d0.id}`}>
-              <Rec rows={[["Name", d0.name], ["Origin", d0.origin], ["Owner", d0.owner], ["Stage", COLS[d0.stage]], ["Requested", "04 Nov"], ["Target SKU", d0.stage === 5 ? "Created" : "After final CAD lock"]]} />
+              <Rec rows={[["Name", d0.name], ["Origin", d0.origin], ["Owner", d0.owner], ["Stage", COLS[d0.stage]], ["Requested", "04 Nov"], ["Target SKU", d0.stage === 7 ? "Created" : d0.stage === 6 ? "Ready to create" : "After final CAD lock"]]} />
             </Card>
             <FilesCard key={d0.id} folder={`designs/${d0.id}`} title={`CAD files and references, ${d0.id}`} />
             <Card title="References and history">
@@ -73,11 +78,8 @@ export default function DesignPage() {
       )}
 
       {tab === "rpt" && (
-        <Grid head={["Design", "Prototype", "Made by", "Sent", "Due", "Status"]} rows={[
-          ["D-118", "Wax print, size 12", "3D Print Lab, Mumbai", "08 Nov", "14 Nov", <Pill key="a">In progress</Pill>],
-          ["D-121", "Resin print", "3D Print Lab, Mumbai", "05 Nov", "11 Nov", <Pill key="b">Received</Pill>],
-          ["D-109", "Metal prototype", "Mehta Jewel Casting", "20 Oct", "28 Oct", <Pill key="c">Approved</Pill>],
-        ]} />
+        <Grid head={["Design", "Name", "Prototype", "Stage", "Status"]}
+          rows={s.designs.filter((d) => d.stage >= 4).map((d) => [d.id, d.name, d.stage === 4 ? "In production" : "Received", COLS[d.stage], <Pill key="s">{d.stage === 4 ? "In progress" : d.stage === 5 ? "Awaiting approval" : "Approved"}</Pill>])} />
       )}
 
       {tab === "new" && (

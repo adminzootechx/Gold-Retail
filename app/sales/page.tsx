@@ -2,7 +2,10 @@
 import { useState } from "react";
 import { useStore } from "../lib/store";
 import { useDetail } from "../lib/detail";
-import { corporateOrder, posSale, submitDiscount } from "../lib/actions2";
+import { corporateOrder, posSale } from "../lib/actions2";
+import { HNI_ACTIONS, createHniOrder, hniNext } from "../lib/actions4";
+import { ofKind } from "../lib/records";
+import { SALE_STEPS, MTO_STEPS } from "../lib/steps";
 import { g, inr } from "../lib/calc";
 import { THIS_MONTH, custName, lakh, monthKey } from "../lib/stats";
 import { Btn, Card, Field, PageHeader, Rec, Tabs, inputCls } from "../components/ui";
@@ -17,7 +20,8 @@ export default function Sales() {
   const detail = useDetail();
   const [tab, setTab] = useState<Tab>("orders");
   const [ch, setCh] = useState("");
-  const [pct, setPct] = useState(12);
+  const [hSku, setHSku] = useState("");
+  const [hDisc, setHDisc] = useState(8);
   const recent = [...s.invoices].reverse();
   const [inv, setInv] = useState(recent[0].id);
   const rows = recent.filter((o) => !ch || o.channel === ch).slice(0, 25);
@@ -27,11 +31,13 @@ export default function Sales() {
   const taxable = Math.round(doc.amount / 1.03);
   const pieces = doc.tags.map((t) => s.items.find((i) => i.tag === t)).filter((i) => !!i);
   const corp = s.customers.filter((c) => c.segment === "Corporate");
-  const hniBase = 940000;
+  const hniOrders = ofKind(s.records, "hni");
+  const hk = hSku || s.skus[0]?.code || "";
+  const hList = s.items.find((i) => i.sku === hk)?.price ?? 100000;
 
   return (
     <>
-      <PageHeader title="Sales orders" sub="One order model for every channel.">
+      <PageHeader title="Sales Order Management" sub="One order model for every channel.">
         {tab === "orders" && (
           <select aria-label="Channel" className="h-9 rounded-lg border border-border bg-card px-2" value={ch} onChange={(e) => setCh(e.target.value)}>
             <option value="">All channels</option>{["Retail", "HNI", "Corporate", "Online"].map((c) => <option key={c}>{c}</option>)}
@@ -43,6 +49,13 @@ export default function Sales() {
       {tab === "orders" && (
         <>
           <Kpis items={[["Invoices this month", String(month.length)], ["Value this month", lakh(month.reduce((a, o) => a + o.amount, 0))], ["Unpaid balance", inr(s.invoices.reduce((a, o) => a + (o.amount - o.paid), 0))], ["Online orders open", String(s.orders.filter((o) => o.state < 7).length)]]} />
+          <h2 className="mb-3 text-xl font-semibold">Open orders</h2>
+          <Grid head={["Order", "Channel", "Customer", "Piece", "Stage"]}
+            rows={[
+              ...hniOrders.filter((r) => r.f.state !== "Delivered").map((r) => [<span key={r.id} className="font-mono text-[12.5px]">{r.id}</span>, "HNI", r.f.cust, r.f.sku + " · " + r.f.variant, <Pill key={r.id + "s"}>{r.f.state}</Pill>]),
+              ...s.orders.filter((o) => o.state < 7).map((o) => [<span key={o.id} className="font-mono text-[12.5px]">{o.id}</span>, "Online", o.cust, o.sku + " · " + o.variant, <Pill key={o.id + "s"}>{(o.mto ? MTO_STEPS : SALE_STEPS)[o.state]}</Pill>]),
+            ]} />
+          <h2 className="mb-3 mt-10 text-xl font-semibold">Invoices</h2>
           <Grid head={["Invoice", "Date", "Channel", "Customer", "Store", "Amount", "Status"]} num={[5]} onRow={(i) => detail.open({ kind: "invoice", id: rows[i].id })}
             rows={rows.map((o) => [<span key="i" className="font-mono text-[12.5px]">{o.id}</span>, o.date, o.channel, custName(s.customers, o.custId), o.store, inr(o.amount), <Pill key="s">{status(o.paid, o.amount)}</Pill>])} />
         </>
@@ -57,15 +70,36 @@ export default function Sales() {
       )}
 
       {tab === "hni" && (
-        <div className="grid items-start gap-3.5 lg:grid-cols-2">
-          <Card title="HNI quote, Rohan Mehta">
-            <Rec rows={[["Piece", "Tennis bracelet, 18K White, custom length"], ["List price", inr(hniBase)], [`Discount ${pct}%`, "-" + inr((hniBase * pct) / 100)], ["Quote total", inr(hniBase * (1 - pct / 100)), true]]} />
-            <Field label={`Discount: ${pct}%`} htmlFor="pct"><input id="pct" type="range" min={0} max={20} value={pct} onChange={(e) => setPct(+e.target.value)} className="mt-3 h-6" /></Field>
-            <Btn gold onClick={() => act((d) => submitDiscount(d, "HNI order HN-209", pct, "on custom tennis bracelet"))}>Submit quote</Btn>
-            <p className="mt-2 text-[12.5px] text-muted-foreground">Above 10% needs the founder&apos;s approval. Nobody approves their own request.</p>
-          </Card>
-          <p className="text-muted-foreground">Made to order: a job card is raised once the advance is paid, and the price is locked then.</p>
-        </div>
+        <>
+          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+            <Card title="New high-value order">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const f = new FormData(e.currentTarget);
+                let ok = false;
+                act((d) => { const m = createHniOrder(d, String(f.get("cust")), hk, String(f.get("variant")), String(f.get("spec")), hDisc, +String(f.get("adv"))); ok = !!m && m.startsWith("HN-"); return m; });
+                if (ok) e.currentTarget.reset();
+              }}>
+                <Field label="Customer" htmlFor="h-cust"><select id="h-cust" name="cust" className={inputCls}>{s.customers.filter((c) => c.segment === "HNI" || c.segment === "Repeat").map((c) => <option key={c.id}>{c.name}</option>)}</select></Field>
+                <Field label="SKU" htmlFor="h-sku"><select id="h-sku" value={hk} onChange={(e) => setHSku(e.target.value)} className={inputCls}>{s.skus.map((k) => <option key={k.code} value={k.code}>{k.code} · {k.name}</option>)}</select></Field>
+                <Field label="Variant" htmlFor="h-var"><select id="h-var" name="variant" key={hk} className={inputCls}>{(s.skus.find((k) => k.code === hk)?.variants ?? []).map((v) => <option key={v}>{v}</option>)}</select></Field>
+                <Field label="Custom details" htmlFor="h-spec"><input id="h-spec" name="spec" placeholder="Custom length, engraving" className={inputCls} /></Field>
+                <Field label={`Discount: ${hDisc}%`} htmlFor="h-disc"><input id="h-disc" type="range" min={0} max={20} value={hDisc} onChange={(e) => setHDisc(+e.target.value)} className="h-6" /></Field>
+                <Field label="Advance (percent)" htmlFor="h-adv"><input id="h-adv" name="adv" type="number" min={10} max={100} defaultValue={30} className={inputCls} /></Field>
+                <Rec rows={[["List price", inr(hList)], [`Discount ${hDisc}%`, "-" + inr((hList * hDisc) / 100)], ["Quote total", inr(hList * (1 - hDisc / 100)), true]]} />
+                <p className="my-3 text-[12.5px] text-muted-foreground">Above 10% needs the founder&apos;s approval before the advance. Nobody approves their own request.</p>
+                <Btn gold type="submit">Create quote</Btn>
+              </form>
+            </Card>
+            <div>
+              <p className="mb-3 text-muted-foreground">Made to order: the advance locks the price, a job card is raised at a vendor, and the piece is reserved for the customer when it is tagged.</p>
+              <Grid head={["Order", "Customer", "Piece", "Net price", "Stage", "Job card", ""]} num={[3]}
+                rows={hniOrders.map((r) => [<span key={r.id} className="font-mono text-[12.5px]">{r.id}</span>, r.f.cust, r.f.sku + " · " + r.f.variant, inr(+r.f.net), <Pill key={r.id + "s"}>{r.f.state}</Pill>, r.f.jc || "-",
+                  HNI_ACTIONS[r.f.state] ? <Btn key={r.id + "b"} sm gold onClick={() => act((d) => hniNext(d, r.id))}>{HNI_ACTIONS[r.f.state]}</Btn> : ""])} />
+              {!hniOrders.length && <p className="mt-2 text-muted-foreground">No high-value order yet. Create a quote to start one.</p>}
+            </div>
+          </div>
+        </>
       )}
 
       {tab === "corporate" && (

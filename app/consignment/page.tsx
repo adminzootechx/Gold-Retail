@@ -20,7 +20,7 @@ export default function Consignment() {
 
   return (
     <>
-      <PageHeader title="Consignment" sub="Sent stock stays on our books. Received stock is only held." />
+      <PageHeader title="Consignment" sub="Sent and received. Sent stock stays on our books. Received stock is only held." />
       <Kpis items={[["Memos open", String(s.memos.filter((m) => m.state === "Out").length)], ["Pieces out at partners", String(out.length)], ["Value out", inr(out.reduce((a, i) => a + i.price, 0))], ["Held for others", String(s.memos.filter((m) => m.dir === "Received" && m.state === "Out").reduce((a, m) => a + m.tags.length, 0))]]} />
       <Tabs<Tab> tabs={[["memos", "All memos"], ["sent", "New memo, sent"], ["received", "New memo, received"], ["stock", "Partner stock"], ["settle", "Settlement"]]} value={tab} onChange={setTab} />
 

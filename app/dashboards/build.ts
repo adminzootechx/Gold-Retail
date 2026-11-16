@@ -240,13 +240,13 @@ export function build(s: State, f: Filter): Dash[] {
     if (id === "vendor") for (const j of short) out.push({ text: j.vendor + " is over the wastage allowance on " + j.id, href: "/job-work?jc=" + j.id });
     if (id === "sales") {
       const p = s.approvals.filter((a) => a.state === "pending" && /Discount/.test(a.type)).length;
-      if (p) out.push({ text: plural(p, "discount") + " waiting for approval", href: "/approvals" });
+      if (p) out.push({ text: plural(p, "discount") + " waiting for approval", href: "/security?tab=approvals" });
     }
     if (id === "finance" || id === "ledgers") {
       const o = ageOwed("61-90+");
       if (o) out.push({ text: inr(o) + " owed to us for over 60 days", href: "/finance" });
       const p = s.approvals.filter((a) => a.state === "pending" && a.type === "Purchase order").length;
-      if (p) out.push({ text: plural(p, "purchase order") + " waiting for approval", href: "/approvals" });
+      if (p) out.push({ text: plural(p, "purchase order") + " waiting for approval", href: "/security?tab=approvals" });
     }
     if (id === "customer") {
       const d = cust.filter((c) => c.due > 0);

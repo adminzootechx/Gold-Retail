@@ -65,6 +65,6 @@ test("counts read naturally", () => {
 
 test("order rows say what to do, not which step comes next", () => {
   const m = todos(s, "Store manager");
-  assert.ok(m.some((t) => /WEB-5024: reserve the piece/.test(t.what)));
+  assert.ok(m.some((t) => /WEB-5024: verify the payment/.test(t.what)));
   assert.ok(m.every((t) => !/next is/.test(t.what)));
 });

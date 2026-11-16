@@ -55,7 +55,7 @@ export default function Stores() {
 
   return (
     <>
-      <PageHeader title="Store operations" sub="POS, store stock, receipts, day close and targets.">
+      <PageHeader title="Store Operations" sub="POS, store stock, receipts, day close and targets.">
         <select aria-label="Store" className="h-9 rounded-lg border border-border bg-card px-2" value={store} onChange={(e) => { setStore(e.target.value); setCart([]); }}>{STORES.map((x) => <option key={x}>{x}</option>)}</select>
       </PageHeader>
       <Tabs<Tab> tabs={[["pos", "POS"], ["stock", "Store stock"], ["receipt", "Goods receipt"], ["day", "Day open and close"], ["targets", "Targets"], ["walkin", "Walk-ins"]]} value={tab} onChange={setTab} />

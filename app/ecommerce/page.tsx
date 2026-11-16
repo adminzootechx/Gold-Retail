@@ -6,12 +6,14 @@ import { MTO_STEPS, SALE_STEPS, orderNext, releaseOrder } from "../lib/actions";
 import { alloc } from "../lib/calc";
 import { Badge, Btn, Card, PageHeader, Step, Table, Tabs, Tr } from "../components/ui";
 import { Grid, Pill } from "../components/kit";
+import { NewOnlineOrder } from "../components/Create";
 
 type Tab = "inbox" | "payments" | "pick" | "ship" | "notify";
 
 function Ecommerce() {
-  const { s, act, say } = useStore();
+  const { s, act } = useStore();
   const [tab, setTab] = useState<Tab>("inbox");
+  const [adding, setAdding] = useState(false);
   const [sel, setSel] = useState(useSearchParams().get("order") ?? "WEB-5024");
   const o = s.orders.find((x) => x.id === sel) ?? s.orders[0];
   const a = alloc(s.items, o);
@@ -25,7 +27,10 @@ function Ecommerce() {
 
   return (
     <>
-      <PageHeader title="Online orders" sub="A piece is reserved before payment." />
+      <PageHeader title="E-commerce Order Management" sub="Payment is verified before a piece is reserved. The customer is told at every stage.">
+        <Btn gold onClick={() => setAdding(true)}>New online order</Btn>
+      </PageHeader>
+      <NewOnlineOrder open={adding} onClose={() => setAdding(false)} />
       <Tabs<Tab> tabs={[["inbox", "Order inbox"], ["payments", "Payment verification"], ["pick", "Pick and pack"], ["ship", "Shipping and tracking"], ["notify", "Notification log"]]} value={tab} onChange={setTab} />
 
       {tab === "inbox" && (
@@ -41,7 +46,7 @@ function Ecommerce() {
             <div className="flex flex-col gap-2">{steps.map((st, i) => <Step key={st} done={i <= o.state} next={i === o.state + 1}><p>{st}</p></Step>)}</div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {o.state < 7 ? <Btn gold onClick={() => act((d) => orderNext(d, o.id))}>Next step</Btn> : <Badge kind="ok">Delivered</Badge>}
-              {o.state === 1 && !o.mto && <Btn onClick={() => act((d) => releaseOrder(d, o.id))}>Payment failed, release</Btn>}
+              {o.state === 2 && !o.mto && <Btn onClick={() => act((d) => releaseOrder(d, o.id))}>Customer cancelled, release the piece</Btn>}
             </div>
             {o.notes.length > 0 && (
               <>
@@ -55,7 +60,7 @@ function Ecommerce() {
 
       {tab === "payments" && (
         <Grid head={["Order", "Customer", "Method", "Status", ""]}
-          rows={s.orders.map((x) => [x.id, x.cust, "UPI", <Pill key="s">{x.state >= 2 || x.mto && x.state >= 1 ? "Paid" : "Pending"}</Pill>, x.state < 2 ? <Btn key="b" sm onClick={() => say(x.id + ": use Next step in the order inbox to reserve and verify")}>Verify</Btn> : ""])} />
+          rows={s.orders.map((x) => [x.id, x.cust, "UPI", <Pill key="s">{x.state >= 1 ? "Paid" : "Pending"}</Pill>, x.state === 0 ? <Btn key="b" sm gold onClick={() => act((d) => orderNext(d, x.id))}>Verify payment</Btn> : ""])} />
       )}
 
       {tab === "pick" && (

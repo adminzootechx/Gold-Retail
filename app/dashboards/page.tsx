@@ -1,9 +1,13 @@
-import { redirect } from "next/navigation";
+"use client";
+import { Suspense } from "react";
+import { PageHeader } from "../components/ui";
+import Analytics from "./Analytics";
 
-/** Dashboards now live on Home, under Analytics. Old links and bookmarks land there. */
-export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const sp = await searchParams;
-  const n = new URLSearchParams({ view: "analytics" });
-  for (const [k, v] of Object.entries(sp)) if (typeof v === "string") n.set(k, v);
-  redirect("/?" + n);
+export default function Dashboards() {
+  return (
+    <>
+      <PageHeader title="Dashboards & Analytics" sub="Twelve dashboards from the same live data." />
+      <Suspense fallback={null}><Analytics /></Suspense>
+    </>
+  );
 }

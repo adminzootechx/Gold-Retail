@@ -59,7 +59,7 @@ export default function NotificationDrawer({ open, onClose }: { open: boolean; o
           </ul>
         </div>
         <div className="flex-none border-t border-border px-6 py-3">
-          <Link href="/audit" onClick={onClose} className="inline-flex min-h-10 items-center font-semibold text-primary hover:underline">View full audit log</Link>
+          <Link href="/security?tab=audit" onClick={onClose} className="inline-flex min-h-10 items-center font-semibold text-primary hover:underline">View full audit log</Link>
         </div>
       </aside>
     </>

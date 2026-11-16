@@ -2,7 +2,8 @@
 import type { Rec, RecKind, State } from "./data";
 import { TODAY } from "./stats";
 import { g } from "./calc";
-import { log } from "./actions";
+import { log, orderFor, trail } from "./actions";
+import { stockIn } from "./actions4";
 import { nextNo, ofKind } from "./records";
 
 function add(d: State, kind: RecKind, id: string, f: Record<string, string>) {
@@ -10,6 +11,7 @@ function add(d: State, kind: RecKind, id: string, f: Record<string, string>) {
   d.records.unshift(r);
   return r;
 }
+const TODAY_LABEL = () => new Date(TODAY + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
 const nid = (d: State, kind: RecKind, prefix: string, start: number, pad = 0) => prefix + String(nextNo(d.records, kind, start)).padStart(pad, "0");
 const version = (d: State, kind: RecKind, sku: string) => String(ofKind(d.records, kind).filter((x) => x.f.sku === sku).length + 1);
 const str = (o: Record<string, number>) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, String(v)]));
@@ -50,6 +52,7 @@ export function postGrn(d: State, poId: string, gotMg: number) {
     lot = "ML-" + String(950 + d.lots.length).padStart(4, "0");
     d.lots.push({ id: lot, fine: Math.round(gotMg * 0.999) });
   }
+  if (!metal) stockIn(d, po.what, po.qty);
   po.state = "Received";
   add(d, "grn", id, { po: poId, supplier: po.supplier, ordered: metal ? g(ordered) : po.qty, received: metal ? g(gotMg) : po.qty, diff: String(diff), result: Math.abs(diff) > 500 ? "Variance" : "Matched", lot });
   log(d, `${id} saved against ${poId}${metal ? `, metal lot ${lot} created with ${g(Math.round(gotMg * 0.999))} fine gold` : ""}`);
@@ -96,8 +99,9 @@ export function receivePieces(d: State, jc: string, n: number, grossMg: number) 
   if (!(n > 0) || !(grossMg > 0)) return "Enter the piece count and the gross weight";
   const next = Math.max(700, ...d.inw.map((p) => +p.id.replace(/\D/g, "") || 0)) + 1;
   const rule = d.records.find((r) => r.kind === "certreq" && r.f.sku === j.sku);
+  const made = orderFor(d, j.order);
   for (let i = 0; i < n; i++) {
-    d.inw.push({ id: "IN-" + (next + i), jc, sku: j.sku, name: k.name, variant: k.variants[0], gross: Math.round(grossMg / n), stones: Math.round(j.stI / Math.max(1, j.qty)), need: rule ? rule.f.igi === "yes" || rule.f.sgl === "yes" : true, done: [0, 0, 0, 0, 0], huid: null, rew: null, tag: null });
+    d.inw.push({ ev: [[TODAY_LABEL(), `Received at HO from ${j.vendor} and weighed ${g(Math.round(grossMg / n))}`]], id: "IN-" + (next + i), jc, sku: j.sku, name: k.name, variant: made?.variant ?? k.variants[0], gross: Math.round(grossMg / n), stones: Math.round(j.stI / Math.max(1, j.qty)), need: rule ? rule.f.igi === "yes" || rule.f.sgl === "yes" : true, done: [0, 0, 0, 0, 0], huid: null, rew: null, tag: null });
   }
   if (j.state === "At vendor") j.state = "Received";
   log(d, `${n} pieces received at HO against ${jc}`);
@@ -109,6 +113,7 @@ export function linkCert(d: State, tag: string, lab: string, no: string) {
   if (!it) return "Choose a tag";
   if (!no.trim()) return "Enter the report number";
   it.cert = `${lab} ${no.trim().toUpperCase()}`;
+  trail(d, tag, `Certificate ${it.cert} linked`);
   log(d, `${it.cert} linked to ${tag}`);
   return `${it.cert} linked to ${tag}`;
 }
@@ -125,6 +130,7 @@ export function receiveHallmark(d: State, tag: string) {
   const it = d.items.find((i) => i.tag === tag);
   if (!it) return "Piece not found";
   it.status = "InStock";
+  trail(d, tag, "Received back from the hallmark centre and re-weighed");
   log(d, `${tag} received back from hallmark, re-weighed`);
   return `${tag} is back, re-weighed and in stock`;
 }
@@ -199,4 +205,31 @@ export function saveProfile(d: State, f: Record<string, string>) {
   if (i >= 0) d.records[i] = r; else d.records.push(r);
   log(d, "Profile updated");
   return "Profile saved";
+}
+
+const owned = (d: State, tag: string) => d.items.find((i) => i.tag === tag && i.cust);
+
+/** Take a customer's piece in for repair. Every case starts from a tag, so the history stays on the piece. */
+export function createRepair(d: State, tag: string, issue: string, quote: number) {
+  if (!owned(d, tag)) return "Choose a piece a customer owns";
+  if (!issue.trim()) return "Describe the issue";
+  if (!(quote >= 0)) return "Enter a quote of 0 or more";
+  const id = "RP-" + (Math.max(300, ...d.repairs.map((r) => +r.id.replace(/[^0-9]/g, "") || 0)) + 1);
+  d.repairs.unshift({ id, tag, issue: issue.trim(), state: 0, quote });
+  trail(d, tag, `Repair ${id} taken in: ${issue.trim()}`);
+  log(d, `Repair ${id} taken in for ${tag}: ${issue.trim()}`);
+  return `${id} taken in`;
+}
+
+/** Ask for a refund on a sold piece. It waits for approval; approving it returns the piece to stock through QC. */
+export function createRefund(d: State, tag: string, reason: string, amount: number) {
+  const it = owned(d, tag);
+  if (!it) return "Choose a piece a customer owns";
+  if (!reason.trim()) return "Give the reason";
+  if (!(amount > 0) || amount > it.price) return "The amount must be more than 0 and no more than the sale price";
+  const id = "RF-" + (Math.max(80, ...d.approvals.filter((a) => a.type === "Refund").map((a) => +a.ref.replace(/[^0-9]/g, "") || 0)) + 1);
+  d.approvals.unshift({ id: "AP-" + (41 + d.approvals.length), type: "Refund", ref: id, by: d.role, detail: `${it.name}, ${reason.trim()}`, value: amount, state: "pending", tag });
+  trail(d, tag, `Refund ${id} requested: ${reason.trim()}`);
+  log(d, `Refund ${id} requested for ${tag}`);
+  return `${id} sent for approval`;
 }

@@ -1,6 +1,5 @@
 // More state changes for the full-screen build. Same rules as actions.ts: edit the draft, return a message.
-import { g } from "./calc";
-import { addInvoice, log } from "./actions";
+import { addInvoice, log, trail } from "./actions";
 import { limitOf } from "./records";
 import type { State } from "./data";
 
@@ -14,24 +13,14 @@ export function addDesign(d: State, name: string, origin: string) {
   return id + " added to Request";
 }
 
-export function createJobCard(d: State, vendor: string, sku: string, qty: number) {
-  const ref = d.items.find((i) => i.sku === sku);
-  const issued = Math.round((ref?.net ?? 4000) * 0.75 * qty);
-  const lot = d.lots.find((l) => l.fine >= issued);
-  if (!lot) return "Not enough fine gold in the vault";
-  lot.fine -= issued;
-  const id = "JC-" + (2413 + d.jcs.length - 4);
-  d.jcs.unshift({ id, vendor, sku, qty, issued, pieces: 0, scrap: 0, stI: qty * 20, stSet: 0, stRet: 0, state: "At vendor", lot: lot.id });
-  log(d, `Job card ${id} created, ${g(issued)} fine gold reserved from ${lot.id}`);
-  return `${id} created for ${vendor}`;
-}
+export { createJobCard, jcEstimate, nextJc } from "./actions";
 
 export function posSale(d: State, tags: string[], cust: string, store = "Mumbai Flagship") {
   const lines = tags.map((t) => d.items.find((i) => i.tag === t)).filter((i) => !!i);
   const who = cust || "Walk-in customer";
   const inv = addInvoice(d, { channel: "Retail", store, cust: who, amount: lines.reduce((a, i) => a + i!.price, 0), tags, sku: lines[0]?.sku });
-  for (const it of lines) { it!.status = "Sold"; it!.loc = "Customer"; it!.cust = who; it!.inv = inv; }
-  log(d, `Sale ${inv}: ${tags.length} piece(s) to ${who}`);
+  for (const it of lines) { it!.status = "Sold"; it!.loc = "Customer"; it!.cust = who; it!.inv = inv; trail(d, it!.tag, `Sold on ${inv} to ${who} at ${store}`); }
+  log(d, `Sale ${inv}: ${tags.join(", ")} to ${who}`);
   return `Sale ${inv} completed`;
 }
 
@@ -39,7 +28,7 @@ export function issueMemo(d: State, party: string, tags: string[]) {
   const id = "CN-" + String(13 + d.memos.filter((m) => m.dir === "Sent").length - 1).padStart(3, "0");
   for (const t of tags) {
     const it = d.items.find((i) => i.tag === t);
-    if (it) { it.status = "OnConsignment"; it.loc = "Consignment partner"; it.memo = id; }
+    if (it) { it.status = "OnConsignment"; it.loc = "Consignment partner"; it.memo = id; trail(d, t, `Memo ${id} out to ${party}`); }
   }
   d.memos.unshift({ id, dir: "Sent", party, tags, state: "Out" });
   log(d, `Consignment memo ${id} issued to ${party}`);
@@ -53,8 +42,8 @@ export function settleMemo(d: State, id: string, outcome: "Sold" | "Returned") {
     for (const t of m.tags) {
       const it = d.items.find((i) => i.tag === t);
       if (!it) continue;
-      if (outcome === "Sold") { it.status = "Sold"; it.loc = "Customer"; it.cust = m.party; it.inv = addInvoice(d, { channel: "Corporate", store: "HO", cust: m.party, amount: it.price, tags: [it.tag] }); }
-      else { it.status = "InStock"; it.loc = "HO Vault"; delete it.memo; }
+      if (outcome === "Sold") { it.status = "Sold"; it.loc = "Customer"; it.cust = m.party; it.inv = addInvoice(d, { channel: "Corporate", store: "HO", cust: m.party, amount: it.price, tags: [it.tag] }); trail(d, t, `Memo ${id} settled: sold to ${m.party} on ${it.inv}`); }
+      else { it.status = "InStock"; it.loc = "HO Vault"; delete it.memo; trail(d, t, `Memo ${id} settled: returned from ${m.party}`); }
     }
   }
   log(d, `Memo ${id} settled as ${outcome.toLowerCase()}`);
@@ -64,6 +53,7 @@ export function settleMemo(d: State, id: string, outcome: "Sold" | "Returned") {
 export function transferItem(d: State, tag: string, to: string) {
   const it = d.items.find((i) => i.tag === tag)!;
   it.to = to; it.loc = `${it.loc} to ${to}`; it.status = "InTransit";
+  trail(d, tag, `Sent to ${to}, in transit`);
   log(d, `${tag} sent to ${to}`);
   return `${tag} in transit to ${to}`;
 }
@@ -72,6 +62,7 @@ export function receiveItem(d: State, tag: string) {
   const it = d.items.find((i) => i.tag === tag)!;
   if (it.to) { it.loc = it.to; delete it.to; }
   it.status = "InStock";
+  trail(d, tag, `Received at ${it.loc}`);
   log(d, `${tag} received at ${it.loc}`);
   return `${tag} received at ${it.loc}`;
 }

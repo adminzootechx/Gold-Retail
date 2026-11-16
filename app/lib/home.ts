@@ -37,7 +37,7 @@ export function todos(s: State, role: Role): Todo[] {
 
   if (role === "Founder") {
     for (const a of pending) {
-      out.push({ id: a.id, level: "decision", what: `${a.type}: ${a.detail}${a.value ? ", " + inr(a.value) : ""}`, meta: `${a.ref} · asked by ${a.by}`, href: "/approvals", cta: "Open", decide: a.id });
+      out.push({ id: a.id, level: "decision", what: `${a.type}: ${a.detail}${a.value ? ", " + inr(a.value) : ""}`, meta: `${a.ref} · asked by ${a.by}`, href: "/security?tab=approvals", cta: "Open", decide: a.id });
     }
     out.push(...blockedGold);
     const owed = new Map<string, number>();
@@ -53,7 +53,7 @@ export function todos(s: State, role: Role): Todo[] {
       out.push({ id: p.id, level: "todo", what: next === undefined ? `${p.name} is ready to tag` : `${p.name} waits at: ${INWARD_STEPS[next]}`, meta: `${p.id} · ${p.jc} · ${p.variant}`, href: "/inward", cta: next === undefined ? "Tag it" : "Continue" });
     }
     for (const j of s.jcs.filter((x) => x.state === "At vendor")) out.push({ id: "out-" + j.id, level: "todo", what: `${j.id} is with ${j.vendor}`, meta: `${plural(j.qty, "piece")} · ${g(j.issued)} fine gold issued`, href: "/job-work?jc=" + j.id, cta: "Open" });
-    for (const a of pending.filter((x) => x.by === role)) out.push({ id: a.id, level: "todo", what: `Waiting on the founder: ${a.type}, ${a.detail}`, meta: a.ref, href: "/approvals", cta: "See" });
+    for (const a of pending.filter((x) => x.by === role)) out.push({ id: a.id, level: "todo", what: `Waiting on the founder: ${a.type}, ${a.detail}`, meta: a.ref, href: "/security?tab=approvals", cta: "See" });
   }
 
   if (role === "Store manager") {
@@ -63,8 +63,8 @@ export function todos(s: State, role: Role): Todo[] {
       out.push({ id: o.id, level: "todo", what: o.state === 0 && mto ? `${o.id} has no stock: ${action.toLowerCase()} and make it to order` : `${o.id}: ${action.toLowerCase()}`, meta: `${o.cust} · ${o.sku} ${o.variant}`, href: "/ecommerce?order=" + o.id, cta: "Open" });
     }
     for (const i of s.items.filter((x) => x.status === "InTransit")) out.push({ id: "rx-" + i.tag, level: "todo", what: `Receive ${i.tag} at ${i.to ?? "the store"}`, meta: i.loc, href: "/stores", cta: "Receive" });
-    for (const r of s.repairs.filter((x) => REPAIR_STEPS[x.state] === "Ready")) out.push({ id: r.id, level: "todo", what: `${r.id} is ready, call the customer`, meta: `${r.tag} · ${r.issue}`, href: "/after-sales", cta: "Open" });
-    for (const a of pending.filter((x) => x.by === role)) out.push({ id: a.id, level: "todo", what: `Waiting on the founder: ${a.type}, ${a.detail}`, meta: a.ref, href: "/approvals", cta: "See" });
+    for (const r of s.repairs.filter((x) => REPAIR_STEPS[x.state] === "Ready")) out.push({ id: r.id, level: "todo", what: `${r.id} is ready, call the customer`, meta: `${r.tag} · ${r.issue}`, href: "/repairs", cta: "Open" });
+    for (const a of pending.filter((x) => x.by === role)) out.push({ id: a.id, level: "todo", what: `Waiting on the founder: ${a.type}, ${a.detail}`, meta: a.ref, href: "/security?tab=approvals", cta: "See" });
   }
 
   if (role === "Vendor (portal)") {

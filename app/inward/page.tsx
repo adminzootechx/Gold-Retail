@@ -25,7 +25,7 @@ export default function InwardPage() {
         <div className="mb-2.5 flex items-start justify-between">
           <div>
             <h3 className="text-lg font-semibold">{p.name}</h3>
-            <span className="text-muted-foreground">{p.id} · {p.jc} · {p.variant} · {g(p.rew ?? p.gross)}</span>
+            <span className="text-muted-foreground">{p.id} · {p.jc}{s.jcs.find((x) => x.id === p.jc)?.order ? " · for " + s.jcs.find((x) => x.id === p.jc)!.order : ""} · {p.variant} · {g(p.rew ?? p.gross)}</span>
           </div>
           {p.tag && <Badge kind="ok">Tagged</Badge>}
         </div>
@@ -62,7 +62,7 @@ export default function InwardPage() {
 
   return (
     <>
-      <PageHeader title="Inward" sub="Receive, match, QC, hallmark, re-weigh, then tag." />
+      <PageHeader title="Head Office Inward" sub="Receive, match, QC, hallmark, re-weigh, then tag." />
       <Tabs<Tab> tabs={[["receive", "Receive"], ["qc", "QC and tagging"], ["hallmark", "Hallmark"], ["certs", "Certificates"], ["tags", "Tag print queue"]]} value={tab} onChange={setTab} />
 
       {tab === "receive" && (

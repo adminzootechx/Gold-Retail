@@ -1,17 +1,15 @@
 "use client";
 import Link from "./components/Go";
-import { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "./lib/store";
 import { g, inr, jcCalc } from "./lib/calc";
 import { STORE_TARGET, VENDOR_SELF, goldWhere, pipeline, revenueNow, salesMonth, salesToday, todos } from "./lib/home";
 import { custName, dayLabel, lakh, plural, receivables, short } from "./lib/stats";
-import { Card, PageHeader, Tabs } from "./components/ui";
+import { Card, PageHeader } from "./components/ui";
 import { Grid, Pill } from "./components/kit";
 import { FounderBand, ProductionBand, StoreBand } from "./components/RetailBand";
 import { Facts, GoldWhere, NeedsYou, Pipeline } from "./components/Home";
 import type { State } from "./lib/data";
-import Analytics, { ChartView } from "./dashboards/Analytics";
+import { ChartView } from "./dashboards/Analytics";
 import { build } from "./dashboards/build";
 
 const both = ["Mumbai Flagship", "Delhi Store"];
@@ -25,7 +23,7 @@ function Glance({ s, picks }: { s: State; picks: [string, number][] }) {
     <section aria-labelledby="glance" className="mt-10">
       <div className="mb-4 flex items-baseline justify-between gap-4">
         <h2 id="glance" className="text-lg font-semibold">At a glance</h2>
-        <Link href="/?view=analytics" className="inline-flex min-h-10 items-center font-semibold text-primary hover:underline">Open all analytics</Link>
+        <Link href="/dashboards" className="inline-flex min-h-10 items-center font-semibold text-primary hover:underline">Open all analytics</Link>
       </div>
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{charts.map((c) => <ChartView key={c.title} c={c} />)}</div>
     </section>
@@ -41,7 +39,7 @@ function FounderHome({ s }: { s: State }) {
     <>
       <FounderBand s={s} />
       <Facts items={[
-        { label: "Revenue this month", value: lakh(r.now), note: `Last month closed at ${lakh(r.prevTotal)}`, href: "/?view=analytics&v=sales", delta: r.before ? Math.round(((r.now - r.before) / r.before) * 100) : undefined },
+        { label: "Revenue this month", value: lakh(r.now), note: `Last month closed at ${lakh(r.prevTotal)}`, href: "/dashboards?v=sales", delta: r.before ? Math.round(((r.now - r.before) / r.before) * 100) : undefined },
         { label: "Stock value", value: lakh(live.reduce((a, i) => a + i.price, 0)), note: `${plural(live.length, "piece")} on the books`, href: "/inventory" },
         { label: "Owed to us", value: lakh(owed.reduce((a, v) => a + (v.amount - v.paid), 0)), note: `${plural(owed.length, "unpaid invoice")}`, href: "/finance" },
         { label: "Gold ledger", value: short ? plural(short, "card") + " short" : "Balanced", note: short ? "Job cards that do not reconcile" : "Every received job card reconciles", href: "/job-work", alert: short > 0 },
@@ -131,31 +129,17 @@ function VendorHome({ s }: { s: State }) {
   );
 }
 
-type View = "today" | "analytics";
-
-function HomeView() {
+export default function Home() {
   const { s } = useStore();
-  const router = useRouter();
-  const q = useSearchParams();
   const vendor = s.role === "Vendor (portal)";
-  const view: View = !vendor && q.get("view") === "analytics" ? "analytics" : "today";
   const who = vendor ? VENDOR_SELF : s.role;
   return (
     <>
       <PageHeader title="Home" sub={`${who}, ${dayLabel()}`} />
-      {!vendor && <Tabs<View> tabs={[["today", "Today"], ["analytics", "Analytics"]]} value={view} onChange={(v) => router.replace(v === "today" ? "/" : "/?view=analytics", { scroll: false })} />}
-      {view === "analytics" ? <Analytics /> : (
-        <>
-          {s.role === "Founder" && <FounderHome s={s} />}
-          {s.role === "Production manager" && <ProductionHome s={s} />}
-          {s.role === "Store manager" && <StoreHome s={s} />}
-          {vendor && <VendorHome s={s} />}
-        </>
-      )}
+      {s.role === "Founder" && <FounderHome s={s} />}
+      {s.role === "Production manager" && <ProductionHome s={s} />}
+      {s.role === "Store manager" && <StoreHome s={s} />}
+      {vendor && <VendorHome s={s} />}
     </>
   );
-}
-
-export default function Home() {
-  return <Suspense fallback={null}><HomeView /></Suspense>;
 }

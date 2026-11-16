@@ -149,3 +149,6 @@ button:has(> code), td button, td, td *, .font-mono, input, select, textarea, op
 /* Placeholders and chart legends meet 4.5:1 on white. */
 ::placeholder { color: #5b6a70; opacity: 1; }
 .recharts-legend-item-text { color: var(--foreground) !important; }
+
+/* Labels written exactly as the blueprint spells them (E-commerce, CRM & Marketing) keep their own case. */
+.normal-case { text-transform: none; }

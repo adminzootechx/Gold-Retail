@@ -38,7 +38,7 @@ export default function Products() {
 
   return (
     <>
-      <PageHeader title="Products" sub="SKUs, variants, BOM, pricing and certificates." />
+      <PageHeader title="Product Master & SKU Management" sub="SKUs, variants, BOM, pricing and certificates." />
       <Grid head={["SKU", "Name", "Design", "Variants", "Certificate"]} sel={s.skus.indexOf(k)} onRow={(i) => setCode(s.skus[i].code)}
         rows={s.skus.map((x) => [<span key="c" className="font-mono text-[12.5px]">{x.code}</span>, x.name, x.design,
           <span key="v" className="flex gap-1">{x.variants.map((v) => <Badge key={v} kind="gold">{v}</Badge>)}</span>, x.cert])} />
