@@ -45,7 +45,7 @@ export default function Crm() {
 
       {tab === "segments" && (
         <>
-          <Kpis items={SEGMENTS.slice(0, 4).map(([n]) => [n, String(count(n))] as [string, string])} />
+          <Kpis items={SEGMENTS.slice(0, 4).map(([n]) => [n, String(count(n)), undefined, undefined, () => setTab("segments")] as [string, string, undefined, undefined, () => void])} />
           <Grid head={["Segment", "Customers", "Rule"]} num={[1]} rows={SEGMENTS.map(([n]) => [n, count(n), "Saved filter on customer data"])} />
         </>
       )}

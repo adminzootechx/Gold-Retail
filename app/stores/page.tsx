@@ -129,7 +129,7 @@ export default function Stores() {
 
       {tab === "targets" && (
         <>
-          <Kpis items={STORES.map((n) => [n, Math.round((sold(n) / TARGET[n]) * 100) + "%", `${lakh(sold(n))} of ${lakh(TARGET[n])}`] as [string, string, string])} />
+          <Kpis items={STORES.map((n) => [n, Math.round((sold(n) / TARGET[n]) * 100) + "%", `${lakh(sold(n))} of ${lakh(TARGET[n])}`, undefined, "/dashboards?v=stores"] as [string, string, string, undefined, string])} />
           <Card title="Sales vs target, this month"><Bars data={STORES.map((n) => [n, Math.round((sold(n) / TARGET[n]) * 100)] as [string, number])} fmt={(v) => v + "%"} /></Card>
           <h3 className="mb-2 mt-5 text-lg font-semibold">Latest sales at {store}</h3>
           <Grid head={["Invoice", "Date", "Customer", "Amount"]} num={[3]} rows={[...s.invoices].reverse().filter((v) => v.store === store).slice(0, 6).map((v) => [v.id, v.date, custName(s.customers, v.custId), inr(v.amount)])} />

@@ -1,15 +1,15 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useStore } from "../lib/store";
-import { closeJobCard, requestVariance } from "../lib/actions";
-import { ct, g, inr, jcBalanced, jcCalc } from "../lib/calc";
-import { Badge, Btn, Card, Field, PageHeader, Rec, Table, Tabs, Tr, inputCls } from "../components/ui";
+import { ct, g, inr } from "../lib/calc";
+import { Badge, Btn, Card, Field, PageHeader, Table, Tabs, Tr, inputCls } from "../components/ui";
 import { FormCard, Grid, Pill } from "../components/kit";
 import { VENDORS } from "../lib/mock";
 import { issueSlip, returnSlip } from "../lib/actions3";
 import { ofKind } from "../lib/records";
 import { NewJobCard } from "../components/Create";
+import { useDetail } from "../lib/detail";
 
 type Tab = "cards" | "vendors" | "issue" | "return" | "account" | "invoices";
 
@@ -17,14 +17,14 @@ function JobWork() {
   const { s, act } = useStore();
   const isVendor = s.role.startsWith("Vendor");
   const [tab, setTab] = useState<Tab>("cards");
-  const [sel, setSel] = useState(useSearchParams().get("jc") ?? "JC-2409");
+  const asked = useSearchParams().get("jc");
+  const { open: openDetail } = useDetail();
+  // A link or a new card names the card to show: it opens in the side panel.
+  useEffect(() => { if (asked) openDetail({ kind: "jobcard", id: asked }); }, [asked, openDetail]);
   const [creating, setCreating] = useState(false);
+  const [rj, setRj] = useState("");
   const [acct, setAcct] = useState("Shree Karigar Works");
   const list = isVendor ? s.jcs.filter((j) => j.vendor === "Shree Karigar Works") : s.jcs;
-  const j = list.find((x) => x.id === sel) ?? list[0];
-  const c = jcCalc(j);
-  const requested = s.approvals.some((a) => a.type === "Metal variance" && a.ref === j.id);
-  const canClose = j.state === "Received" && (jcBalanced(j) || j.approved);
   const vendors = isVendor ? VENDORS.filter((v) => v.name === "Shree Karigar Works") : VENDORS;
   const tabs: [Tab, string][] = [["cards", "Job cards"], ["vendors", "Vendors"], ["issue", "Material issue"], ["return", "Return receipt"], ["account", "Vendor account"], ["invoices", "Job-work invoices"]];
 
@@ -40,44 +40,15 @@ function JobWork() {
       <Tabs<Tab> tabs={isVendor ? tabs.filter((t) => t[0] === "cards" || t[0] === "account") : tabs} value={tab} onChange={setTab} />
 
       {tab === "cards" && (
-        <div className="grid items-start gap-4 lg:grid-cols-[1.1fr_1fr]">
+        <>
           <Table head={["Job card", "Vendor", "SKU", "Qty", "Status"]} num={[3]}>
             {list.map((x) => (
-              <Tr key={x.id} selected={x.id === j.id} onClick={() => setSel(x.id)} num={[3]}
+              <Tr key={x.id} onClick={() => openDetail({ kind: "jobcard", id: x.id })} num={[3]}
                 cells={[<span key="i" className="font-mono text-[12.5px]">{x.id}</span>, x.vendor, x.sku, x.qty, <Badge key="s" kind={x.state === "Closed" ? "ok" : x.state === "At vendor" ? "info" : "warn"}>{x.state}</Badge>]} />
             ))}
           </Table>
-          <Card>
-            <div className="mb-2.5 flex items-center justify-between"><h3 className="text-lg font-semibold">{j.id}</h3><span className="text-muted-foreground">{j.vendor}</span></div>
-            {j.order && <p className="mb-2 font-semibold text-primary">Making the piece for order {j.order}</p>}
-            {j.state === "At vendor" ? (
-              <>
-                <p className="mb-2 text-muted-foreground">Material is with the vendor. Reconciliation starts when pieces and scrap are received.</p>
-                <Rec rows={[["Fine gold issued", g(j.issued)], ["Stones issued", ct(j.stI)]]} />
-              </>
-            ) : (
-              <>
-                <h3 className="mb-1.5 font-semibold">Gold, in fine gold</h3>
-                <Rec rows={[[`Issued from ${j.lot}`, g(j.issued)], ["In finished pieces", g(j.pieces)], ["Scrap and dust returned", g(j.scrap)], ["Variance", g(c.variance)], ["Allowed wastage (1.5%)", g(c.allowed)], ["Unreconciled", g(c.unrec), true]]} />
-                <h3 className="mb-1.5 mt-3.5 font-semibold">Stones</h3>
-                <Rec rows={[["Issued", ct(j.stI)], ["Set in pieces", ct(j.stSet)], ["Returned", ct(j.stRet)], ["Difference", ct(c.stDiff), true]]} />
-                <div className="mt-3.5 flex flex-wrap items-center gap-2">
-                  {j.state === "Closed" ? <Badge kind="ok">Closed</Badge> : canClose ? (
-                    <>
-                      <Btn gold onClick={() => act((d) => closeJobCard(d, j.id))}>Close job card</Btn>
-                      {j.approved && <Badge kind="ok">Variance approved</Badge>}
-                    </>
-                  ) : (
-                    <>
-                      <Btn gold disabled={requested} onClick={() => act((d) => requestVariance(d, j.id))}>{requested ? "Approval requested" : "Request variance approval"}</Btn>
-                      <span className="text-muted-foreground">Cannot close until balances reconcile or the variance is approved.</span>
-                    </>
-                  )}
-                </div>
-              </>
-            )}
-          </Card>
-        </div>
+          <p className="mt-3 text-muted-foreground">Click a job card to open its details and {isVendor ? "see where it stands" : "change its status"}.</p>
+        </>
       )}
 
       {tab === "vendors" && (
@@ -100,14 +71,36 @@ function JobWork() {
 
       {tab === "return" && (
         <div className="grid items-start gap-3.5 lg:grid-cols-2">
-          <FormCard title="Return receipt" cta="Record return" fields={[
-            { id: "jc", label: "Job card", type: "select", options: s.jcs.map((x) => x.id) },
-            { id: "pieces", label: "Pieces received", type: "number", value: "6" },
-            { id: "scrap", label: "Scrap and dust (mg fine)", type: "number", value: "2480" },
-          ]} onSubmit={(v) => act((d) => returnSlip(d, v.jc, +v.pieces, +v.scrap))} />
-          <p className="text-muted-foreground">Returned pieces go to inward for matching, QC, hallmark and tagging. The card closes once it balances.</p>
-          <div className="lg:col-span-2"><Grid head={["Return", "Date", "Job card", "Vendor", "Pieces", "Scrap", "By"]} num={[4, 5]}
-            rows={ofKind(s.records, "ret").map((x) => [x.id, x.date, x.f.jc, x.f.vendor, x.f.pieces, g(+x.f.scrap), x.by])} /></div>
+          {(() => {
+            // The form starts from a balanced return for the card, so the usual case is one click. Change any figure to record a real difference.
+            const open = s.jcs.filter((x) => x.state !== "Closed");
+            const rc = open.find((x) => x.id === rj) ?? open[0];
+            const left = rc ? Math.max(0, rc.issued - rc.pieces - rc.scrap) : 0;
+            const scrapD = rc ? Math.round(left * 0.03) : 0;
+            const goldD = rc ? Math.round(left * 0.97) - Math.round(rc.issued * 0.005) : 0;
+            const stLeft = rc ? Math.max(0, rc.stI - rc.stSet - rc.stRet) : 0;
+            const retD = Math.round(stLeft * 0.03);
+            return (
+              <Card title="Return receipt">
+                <form key={rc?.id + ":" + (rc?.pieces ?? 0)} onSubmit={(e) => {
+                  e.preventDefault();
+                  const f = new FormData(e.currentTarget);
+                  act((d) => returnSlip(d, rc.id, +String(f.get("n")), Math.round(+String(f.get("gold")) * 1000), Math.round(+String(f.get("scrap")) * 1000), +String(f.get("set")), +String(f.get("ret"))));
+                }}>
+                  <Field label="Job card" htmlFor="rjc"><select id="rjc" value={rc?.id ?? ""} onChange={(e) => setRj(e.target.value)} className={inputCls}>{open.map((x) => <option key={x.id} value={x.id}>{x.id} · {x.vendor} · {g(x.issued)} issued</option>)}</select></Field>
+                  <Field label="Pieces received" htmlFor="rn"><input id="rn" name="n" type="number" min={1} defaultValue={rc?.qty ?? 1} className={inputCls} /></Field>
+                  <Field label="Fine gold in the pieces, in grams" htmlFor="rgold"><input id="rgold" name="gold" type="number" min={0} step="0.001" defaultValue={(goldD / 1000).toFixed(3)} className={inputCls} /></Field>
+                  <Field label="Scrap and dust, fine gold in grams" htmlFor="rscrap"><input id="rscrap" name="scrap" type="number" min={0} step="0.001" defaultValue={(scrapD / 1000).toFixed(3)} className={inputCls} /></Field>
+                  <Field label="Stones set, in points" htmlFor="rset"><input id="rset" name="set" type="number" min={0} defaultValue={stLeft - retD} className={inputCls} /></Field>
+                  <Field label="Stones returned, in points" htmlFor="rret"><input id="rret" name="ret" type="number" min={0} defaultValue={retD} className={inputCls} /></Field>
+                  <Btn gold type="submit" disabled={!rc}>Record return</Btn>
+                </form>
+              </Card>
+            );
+          })()}
+          <p className="text-muted-foreground">The card reconciles gold issued against the gold in the pieces plus scrap, within the 1.5% allowance, and stones issued against stones set plus returned. Returned pieces then go to Head Office Inward. The card closes once it balances.</p>
+          <div className="lg:col-span-2"><Grid head={["Return", "Date", "Job card", "Vendor", "Pieces", "Gold in pieces", "Scrap", "By"]} num={[4, 5, 6]}
+            rows={ofKind(s.records, "ret").map((x) => [x.id, x.date, x.f.jc, x.f.vendor, x.f.pieces, g(+x.f.gold || 0), g(+x.f.scrap), x.by])} /></div>
         </div>
       )}
 

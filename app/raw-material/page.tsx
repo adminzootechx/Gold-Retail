@@ -36,7 +36,7 @@ export default function RawMaterial() {
       <NewPurchaseOrder open={po} onClose={() => setPo(false)} />
       <NewStock open={stock} onClose={() => setStock(false)} />
       <SetStone key={setting} open={!!setting} onClose={() => setSetting("")} recId={setting} />
-      <Kpis items={[["Fine gold in vault", g(fine), `${s.lots.length} lots`], ["Certified stones", String(singles.length), "tracked one by one"], ["Melee and colour lots", String(melee.length + colour.length), "tracked by weight and pieces"], ["Below reorder level", String(low.length)]]} />
+      <Kpis items={[["Fine gold in vault", g(fine), `${s.lots.length} lots`, undefined, () => setTab("metal")], ["Certified stones", String(singles.length), "tracked one by one", undefined, () => setTab("stones")], ["Melee and colour lots", String(melee.length + colour.length), "tracked by weight and pieces", undefined, () => setTab("stones")], ["Below reorder level", String(low.length), undefined, undefined, () => setTab("reorder")]]} />
       <Tabs<Tab> tabs={[["metal", "Metal vault"], ["stones", "Diamonds and stones"], ["findings", "Findings"], ["packaging", "Packaging"], ["reserved", "Reservations"], ["reorder", "Reorder alerts"]]} value={tab} onChange={setTab} />
 
       {tab === "metal" && (

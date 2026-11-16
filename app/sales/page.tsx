@@ -48,7 +48,7 @@ export default function Sales() {
 
       {tab === "orders" && (
         <>
-          <Kpis items={[["Invoices this month", String(month.length)], ["Value this month", lakh(month.reduce((a, o) => a + o.amount, 0))], ["Unpaid balance", inr(s.invoices.reduce((a, o) => a + (o.amount - o.paid), 0))], ["Online orders open", String(s.orders.filter((o) => o.state < 7).length)]]} />
+          <Kpis items={[["Invoices this month", String(month.length), undefined, undefined, "/dashboards?v=sales"], ["Value this month", lakh(month.reduce((a, o) => a + o.amount, 0)), undefined, undefined, "/dashboards?v=sales"], ["Unpaid balance", inr(s.invoices.reduce((a, o) => a + (o.amount - o.paid), 0)), undefined, undefined, "/finance"], ["Online orders open", String(s.orders.filter((o) => o.state < 7).length), undefined, undefined, "/ecommerce"]]} />
           <h2 className="mb-3 text-xl font-semibold">Open orders</h2>
           <Grid head={["Order", "Channel", "Customer", "Piece", "Stage"]}
             rows={[

@@ -8,6 +8,7 @@ import type { State } from "../lib/data";
 import { ChartView } from "../dashboards/Analytics";
 import { cx } from "./ui";
 import { Tile } from "./kit";
+import Link from "./Go";
 
 /** Today's sales against the daily target, drawn as a gold ring that fills as the day goes. */
 function Ring({ pct }: { pct: number }) {
@@ -22,9 +23,10 @@ function Ring({ pct }: { pct: number }) {
 }
 
 /** The one bold surface on Home: today against target, in teal, with the ring beside the figure. */
-function Hero({ label, value, pct, target, children }: { label: string; value: number; pct: number; target: number; children?: React.ReactNode }) {
+function Hero({ label, value, pct, target, href, children }: { label: string; value: number; pct: number; target: number; href: string; children?: React.ReactNode }) {
   return (
     <div className="relative min-w-0 overflow-hidden rounded-[28px] bg-primary p-8 text-white shadow-[0_16px_40px_rgba(4,53,68,0.22)]">
+      <Link href={href} aria-label={`${label}: open the store figures`} className="absolute inset-0 z-10 rounded-[28px] hover:bg-white/5" />
       <svg viewBox="0 0 240 240" className="pointer-events-none absolute -right-10 -top-12 size-60 text-gold opacity-[0.14]" fill="none" stroke="currentColor" strokeWidth="1.2" aria-hidden>
         <path d="M120 10 200 70 120 230 40 70Z M40 70h160 M80 70l40-60 40 60 M80 70l40 160 M160 70l-40 160" />
       </svg>
@@ -59,7 +61,7 @@ export function FounderBand({ s }: { s: State }) {
   const week = { title: "Sales, last 7 days (₹ thousand)", kind: "bar" as const, data: b.week.map((d) => ({ name: d.name, v: Math.round(d.v / 1000) })) };
   return (
     <section aria-label="Today in the business" className="mb-10 grid items-stretch gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-      <Hero label="Stores today" value={b.stores} pct={b.pct} target={b.target}>
+      <Hero label="Stores today" value={b.stores} pct={b.pct} target={b.target} href="/dashboards?v=stores">
         <div className="relative mt-8 grid gap-x-6 gap-y-5 border-t border-white/15 pt-6 sm:grid-cols-2">
           <Fact label="All channels today" value={short(b.all)} />
           <Fact label="Month so far" value={lakh(b.monthSoFar)} note={<span className="text-sm text-white/70">of {lakh(b.monthTarget)} target</span>} />
@@ -94,7 +96,7 @@ export function StoreBand({ s }: { s: State }) {
   const b = storeBand(s);
   return (
     <section aria-label="Your stores today" className="mb-10 grid items-stretch gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-      <Hero label="Sold today" value={b.today} pct={b.pct} target={b.target} />
+      <Hero label="Sold today" value={b.today} pct={b.pct} target={b.target} href="/stores" />
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-1">
         <Tile label="Pieces in your stores" value={String(b.inStores)} note="Ready to sell" href="/inventory" />
         <Tile label="Online orders to move" value={String(b.orders)} note="Not yet delivered" href="/ecommerce" />

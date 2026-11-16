@@ -80,15 +80,22 @@ export function issueSlip(d: State, jc: string, gold: number, stones: number) {
   return `${id} issued, ${g(gold)} on ${j.vendor}'s account`;
 }
 
-export function returnSlip(d: State, jc: string, pieces: number, scrap: number) {
+/** What the vendor hands back on a job card: pieces, the fine gold in them, scrap and dust, and the stones set or returned. These are what the card reconciles against. */
+export function returnSlip(d: State, jc: string, pieces: number, goldMg: number, scrapMg: number, setPts: number, retPts: number) {
   const j = d.jcs.find((x) => x.id === jc);
   if (!j || j.state === "Closed") return "Choose an open job card";
-  j.pieces += pieces;
-  j.scrap += scrap;
+  if (![pieces, goldMg, scrapMg, setPts, retPts].every((n) => n >= 0 && Number.isFinite(n))) return "Enter 0 or more in every field";
+  if (!(pieces >= 1)) return "Enter the number of pieces received";
+  if (j.pieces + goldMg + j.scrap + scrapMg > j.issued) return "The gold returned cannot be more than the " + g(j.issued) + " issued on this card";
+  if (j.stSet + setPts + j.stRet + retPts > j.stI) return "The stones set and returned cannot be more than the " + (j.stI / 100).toFixed(2) + " ct issued";
+  j.pieces += goldMg;
+  j.scrap += scrapMg;
+  j.stSet += setPts;
+  j.stRet += retPts;
   if (j.state === "At vendor") j.state = "Received";
   const id = nid(d, "ret", "MR-", 1);
-  add(d, "ret", id, { jc, vendor: j.vendor, pieces: String(pieces), scrap: String(scrap) });
-  log(d, `${id}: ${pieces} pieces and ${g(scrap)} scrap returned on ${jc}`);
+  add(d, "ret", id, { jc, vendor: j.vendor, pieces: String(pieces), gold: String(goldMg), scrap: String(scrapMg), set: String(setPts), ret: String(retPts) });
+  log(d, `${id}: ${pieces} pieces (${g(goldMg)} fine gold) and ${g(scrapMg)} scrap returned on ${jc}`);
   return `${id} recorded, ${jc} is now at head office`;
 }
 

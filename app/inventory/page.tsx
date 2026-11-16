@@ -61,7 +61,7 @@ export default function Inventory() {
 
       {tab === "locations" && (
         <>
-          <Kpis items={[["Pieces on the books", String(live.length)], ["Stock value", inr(live.reduce((a, i) => a + i.price, 0))], ["In transit", String(s.items.filter((i) => i.status === "InTransit").length)], ["Locations", String(locs.length)]]} />
+          <Kpis items={[["Pieces on the books", String(live.length), undefined, undefined, () => setTab("register")], ["Stock value", inr(live.reduce((a, i) => a + i.price, 0)), undefined, undefined, "/dashboards?v=inventory"], ["In transit", String(s.items.filter((i) => i.status === "InTransit").length), undefined, undefined, () => setTab("transfers")], ["Locations", String(locs.length), undefined, undefined, () => setTab("locations")]]} />
           <Grid head={["Location", "In stock", "Reserved", "Other", "Value"]} num={[1, 2, 3, 4]}
             rows={locs.filter((l) => l !== "Customer").map((l) => {
               const here = s.items.filter((i) => i.loc === l);

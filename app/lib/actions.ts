@@ -85,6 +85,18 @@ export function closeJobCard(d: State, id: string) {
   return id + " closed";
 }
 
+/** Set a job card's status by hand, for a correction or when the work moved on outside the app. The change is written to the audit log. */
+export function setJobCardStatus(d: State, id: string, status: "At vendor" | "Received" | "Closed") {
+  const j = d.jcs.find((v) => v.id === id);
+  if (!j) return "Job card not found";
+  if (j.state === status) return `${id} is already ${status}`;
+  const from = j.state;
+  j.state = status;
+  const note = status === "Closed" && !jcBalanced(j) && !j.approved ? ", without a balanced reconciliation" : "";
+  log(d, `${id} status set by hand from ${from} to ${status}${note}`);
+  return `${id} is now ${status}${note}`;
+}
+
 export function inwardStep(d: State, id: string) {
   const p = d.inw.find((v) => v.id === id)!;
   const i = [0, 1, 2, 3, 4].find((k) => !(p.done[k] || (k === 4 && !p.need)));

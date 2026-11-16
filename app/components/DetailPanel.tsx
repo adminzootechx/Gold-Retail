@@ -1,13 +1,16 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { X } from "lucide-react";
 import Link from "./Go";
 import { useStore } from "../lib/store";
 import { useDialog } from "../lib/useDialog";
 import type { Detail } from "../lib/detail";
-import { g, inr, jcCalc } from "../lib/calc";
+import { ct, g, inr, jcBalanced, jcCalc } from "../lib/calc";
+import { closeJobCard, requestVariance, setJobCardStatus } from "../lib/actions";
+import { ofKind } from "../lib/records";
+import type { JobCard } from "../lib/data";
 import { custName } from "../lib/stats";
-import { Rec, StatusBadge, cx } from "./ui";
+import { Badge, Btn, Rec, StatusBadge, cx, inputCls } from "./ui";
 import { CertBadge, Pill } from "./kit";
 
 const link = "inline-flex min-h-10 items-center font-semibold text-primary hover:underline";
@@ -68,20 +71,69 @@ export default function DetailPanel({ detail, onClose, onOpen }: { detail: Detai
             </>
           )}
 
-          {jc && (() => {
-            const c = jcCalc(jc);
-            return (
-              <>
-                <p className="font-mono text-sm">{jc.id}</p>
-                <h3 className="mb-3 mt-1 text-xl font-semibold">{jc.vendor}</h3>
-                <div className="mb-5 flex flex-wrap items-center gap-2"><Pill>{jc.state === "Received" && c.unrec ? "Short" : jc.state}</Pill><span className="text-muted-foreground">{jc.qty} pieces of {jc.sku}</span></div>
-                <Rec rows={[["Fine gold issued", g(jc.issued)], ["Pieces returned", g(jc.pieces)], ["Scrap returned", g(jc.scrap)], ["Allowed wastage", g(c.allowed)], ["Not accounted for", g(c.unrec), true]]} />
-                <Link href={"/job-work?jc=" + jc.id} onClick={onClose} className={link}>Open the job card</Link>
-              </>
-            );
-          })()}
+          {jc && <JobCardDetail jc={jc} onClose={onClose} />}
         </div>
       </aside>
+    </>
+  );
+}
+
+const STATUSES = ["At vendor", "Received", "Closed"] as const;
+
+/** One job card in full: what it is for, the gold and stones, what has moved on it, and its status. Founder and Production manager can set the status by hand. */
+function JobCardDetail({ jc, onClose }: { jc: JobCard; onClose: () => void }) {
+  const { s, act } = useStore();
+  const [next, setNext] = useState<JobCard["state"]>(jc.state);
+  const c = jcCalc(jc);
+  const mayEdit = s.role === "Founder" || s.role === "Production manager";
+  const slips = ofKind(s.records, "slip").filter((x) => x.f.jc === jc.id);
+  const returns = ofKind(s.records, "ret").filter((x) => x.f.jc === jc.id);
+  const pieces = s.inw.filter((p) => p.jc === jc.id);
+  const requested = s.approvals.some((a) => a.type === "Metal variance" && a.ref === jc.id);
+  const canClose = jc.state === "Received" && (jcBalanced(jc) || jc.approved);
+  const sub = "mb-1.5 mt-5 text-base font-semibold";
+  return (
+    <>
+      <p className="font-mono text-sm">{jc.id}</p>
+      <h3 className="mb-3 mt-1 text-xl font-semibold">{jc.vendor}</h3>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Badge kind={jc.state === "Closed" ? "ok" : jc.state === "At vendor" ? "info" : "warn"}>{jc.state}</Badge>
+        {jc.state === "Received" && c.unrec > 0 && !jc.approved && <Badge kind="bad">Short {g(c.unrec)}</Badge>}
+        {jc.approved && <Badge kind="ok">Variance approved</Badge>}
+      </div>
+      <Rec rows={[["SKU", jc.sku], ["Pieces to make", String(jc.qty)], ["Metal lot", jc.lot], ["Opened", jc.opened ?? "Earlier"], ["For order", jc.order ?? "Stock"]]} />
+
+      <h4 className={sub}>Gold, in fine gold</h4>
+      <Rec rows={[["Issued", g(jc.issued)], ["In finished pieces", g(jc.pieces)], ["Scrap and dust returned", g(jc.scrap)], ["Variance", g(c.variance)], ["Allowed wastage (1.5%)", g(c.allowed)], ["Not accounted for", g(c.unrec), true]]} />
+      <h4 className={sub}>Stones</h4>
+      <Rec rows={[["Issued", ct(jc.stI)], ["Set in pieces", ct(jc.stSet)], ["Returned", ct(jc.stRet)], ["Difference", ct(c.stDiff), true]]} />
+
+      <h4 className={sub}>Material issued</h4>
+      {slips.length ? <ul className="text-[13.5px]">{slips.map((x) => <li key={x.id}><span className="font-mono text-[12.5px]">{x.id}</span> · {g(+x.f.gold)} gold, {ct(+x.f.stones)} stones</li>)}</ul> : <p className="text-muted-foreground">No issue slip yet.</p>}
+      <h4 className={sub}>Returned from the vendor</h4>
+      {returns.length ? <ul className="text-[13.5px]">{returns.map((x) => <li key={x.id}><span className="font-mono text-[12.5px]">{x.id}</span> · {x.f.pieces} pieces, {g(+x.f.gold || 0)} gold, {g(+x.f.scrap)} scrap</li>)}</ul> : <p className="text-muted-foreground">Nothing returned yet.</p>}
+      <h4 className={sub}>At Head Office</h4>
+      {pieces.length ? <ul className="text-[13.5px]">{pieces.map((p) => <li key={p.id}><span className="font-mono text-[12.5px]">{p.id}</span> · {p.tag ? "tagged " + p.tag : "waiting for QC and a tag"}</li>)}</ul> : <p className="text-muted-foreground">No piece received yet.</p>}
+
+      {mayEdit && (
+        <div className="mt-6 rounded-2xl border border-border p-4">
+          <h4 className="mb-2 text-base font-semibold">Status</h4>
+          <label htmlFor="jc-status" className="mb-1 block text-[12.5px] font-semibold">Set the status to</label>
+          <div className="flex flex-wrap items-center gap-2">
+            <select id="jc-status" value={next} onChange={(e) => setNext(e.target.value as JobCard["state"])} className={cx(inputCls, "min-w-40")}>{STATUSES.map((x) => <option key={x}>{x}</option>)}</select>
+            <Btn gold disabled={next === jc.state} onClick={() => act((d) => setJobCardStatus(d, jc.id, next), { undoable: true })}>Update status</Btn>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">This is a manual correction and goes in the audit log. Closing from here skips the balance check; closing from the buttons below keeps it.</p>
+          {jc.state === "Received" && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {canClose
+                ? <Btn onClick={() => act((d) => closeJobCard(d, jc.id))}>Close job card</Btn>
+                : <Btn disabled={requested} onClick={() => act((d) => requestVariance(d, jc.id))}>{requested ? "Approval requested" : "Request variance approval"}</Btn>}
+            </div>
+          )}
+        </div>
+      )}
+      <Link href={"/inward"} onClick={onClose} className="mt-4 inline-flex min-h-10 items-center font-semibold text-primary hover:underline">Open Head Office Inward</Link>
     </>
   );
 }

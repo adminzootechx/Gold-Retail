@@ -159,6 +159,7 @@ function Page() {
     for (const [k, v] of Object.entries(patch)) { if (v === null || v === "All") n.delete(k); else n.set(k, String(v)); }
     router.replace("/dashboards?" + n, { scroll: false });
   };
+  const SOURCE: Record<string, string> = { inventory: "/inventory", raw: "/raw-material", production: "/job-work", manufacturing: "/job-work", sales: "/sales", finance: "/finance", ledgers: "/finance", customer: "/crm", vendor: "/job-work", stores: "/stores", dead: "/inventory", fast: "/inventory" };
   const FILTERED = ["sales", "finance", "ledgers", "customer", "fast"];
   const filterable = !!d && FILTERED.includes(d.id);
   const sel = "h-10 pointer-coarse:h-11 rounded-lg border border-border bg-card px-2.5";
@@ -199,7 +200,7 @@ function Page() {
         <div key={d.id} className="view-in">
           <h2 className="mb-1 text-xl font-semibold">{d.title}{d.sample && <span className="ml-3 rounded-full bg-muted px-2.5 py-0.5 align-middle text-sm font-medium text-muted-foreground">sample figures</span>}</h2>
           <p className="mb-8 text-muted-foreground">{d.about}{filterable ? ` Showing ${f.months === 1 ? "this month" : `the last ${f.months} months`}, ${f.channel === "All" ? "all channels" : f.channel + " channel"}.` : " Always shows today. Period and channel apply to the sales, finance, customer and fast-mover views."}</p>
-          <Kpis items={d.kpis} />
+          <Kpis items={d.kpis.map((k) => [k[0], k[1], k[2], k[3], SOURCE[d.id] ?? "/"] as [string, string, string | undefined, number | undefined, string])} />
           <div className="mb-8 grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
             <div className="grid gap-6">
               <ChartView c={d.charts[0]} />

@@ -41,7 +41,7 @@ export default function Finance() {
 
       {tab === "ar" && (
         <>
-          <Kpis items={[["Receivable", inr(sum(AR))], ["Overdue over 60 days", inr(AR.filter((r) => r.age === "61-90+").reduce((x, r) => x + r.due, 0))]]} />
+          <Kpis items={[["Receivable", inr(sum(AR)), undefined, undefined, "/dashboards?v=ledgers"], ["Overdue over 60 days", inr(AR.filter((r) => r.age === "61-90+").reduce((x, r) => x + r.due, 0)), undefined, undefined, "/dashboards?v=ledgers"]]} />
           <div className="grid items-start gap-3.5 lg:grid-cols-[1.4fr_1fr]">
             <Grid head={["Party", "Amount", "Age", "Note"]} num={[1]} rows={AR.map((r) => [r.party, inr(r.due), <Pill key="a">{r.age === "61-90+" ? "Overdue " + r.age : "Due " + r.age}</Pill>, r.note])} />
             <Card title="Ageing"><Bars data={byAge(AR)} fmt={(v) => inr(v / 1000).replace("₹", "") + "k"} /></Card>
@@ -51,7 +51,7 @@ export default function Finance() {
 
       {tab === "ap" && (
         <>
-          <Kpis items={[["Payable", inr(sum(AP))], ["Due this week", inr(AP.filter((r) => r.age === "0-30").reduce((x, r) => x + r.due, 0))]]} />
+          <Kpis items={[["Payable", inr(sum(AP)), undefined, undefined, "/dashboards?v=ledgers"], ["Due this week", inr(AP.filter((r) => r.age === "0-30").reduce((x, r) => x + r.due, 0)), undefined, undefined, "/dashboards?v=ledgers"]]} />
           <div className="grid items-start gap-3.5 lg:grid-cols-[1.4fr_1fr]">
             <Grid head={["Party", "Amount", "Age", "Note"]} num={[1]} rows={AP.map((r) => [r.party, inr(r.due), <Pill key="a">{r.age === "61-90+" ? "Overdue " + r.age : "Due " + r.age}</Pill>, r.note])} />
             <Card title="Ageing"><Bars data={byAge(AP)} fmt={(v) => inr(v / 1000).replace("₹", "") + "k"} /></Card>

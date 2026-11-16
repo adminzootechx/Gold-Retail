@@ -45,13 +45,13 @@ const KPI_ICONS: [RegExp, ReactNode][] = [
 const kpiIcon = (label: string): ReactNode => KPI_ICONS.find(([re]) => re.test(label))?.[1] ?? <Activity className={ic} aria-hidden />;
 
 /** A figure tile: label and icon on top, the number large, a short note under it. */
-export function Tile({ label, value, note, alert, href, delta, deltaNote = "vs same days last month" }: { label: string; value: string; note?: string; alert?: boolean; href?: string; delta?: number; deltaNote?: string }) {
+export function Tile({ label, value, note, alert, href, onPick, delta, deltaNote = "vs same days last month" }: { label: string; value: string; note?: string; alert?: boolean; href?: string; onPick?: () => void; delta?: number; deltaNote?: string }) {
   const body = (
     <>
-      <div className="flex items-start justify-between gap-3">
+      <span className="flex items-start justify-between gap-3">
         <span className="text-sm text-muted-foreground">{label}</span>
         <span className="grid size-10 flex-none place-items-center rounded-xl bg-mist text-primary transition-colors group-hover:bg-gold group-hover:text-gold-fg">{kpiIcon(label)}</span>
-      </div>
+      </span>
       <b className={cx("mt-3 block font-display text-[2rem] font-semibold leading-tight tabular-nums", alert && "text-danger")}>{value}</b>
       {delta !== undefined && (
         <span className={cx("mt-2 inline-flex items-center gap-1 text-sm font-semibold", delta >= 0 ? "text-success" : "text-danger")}>
@@ -63,13 +63,16 @@ export function Tile({ label, value, note, alert, href, delta, deltaNote = "vs s
     </>
   );
   const cls = "group block min-w-0 rounded-2xl border border-border bg-card p-6 transition-[transform,box-shadow,border-color] duration-200";
-  return href ? <Link href={href} className={cx(cls, "hover:-translate-y-0.5 hover:border-gold/60 hover:shadow-[0_8px_24px_rgba(4,53,68,0.10)]")}>{body}</Link> : <div className={cls}>{body}</div>;
+  const lift = "hover:-translate-y-0.5 hover:border-gold/60 hover:shadow-[0_8px_24px_rgba(4,53,68,0.10)]";
+  if (onPick) return <button type="button" onClick={onPick} className={cx(cls, lift, "w-full text-left")}>{body}</button>;
+  return href ? <Link href={href} className={cx(cls, lift)}>{body}</Link> : <div className={cls}>{body}</div>;
 }
 
-export function Kpis({ items }: { items: [label: string, value: string, sub?: string, delta?: number][] }) {
+/** Figure tiles. The fifth value makes a tile clickable: a path goes to that screen, a function switches a tab on this one. */
+export function Kpis({ items }: { items: [label: string, value: string, sub?: string, delta?: number, to?: string | (() => void)][] }) {
   return (
     <div className="mb-10 grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-6">
-      {items.map(([l, v, sub, dl]) => <Tile key={l} label={l} value={v} note={sub} delta={dl} />)}
+      {items.map(([l, v, sub, dl, to]) => <Tile key={l} label={l} value={v} note={sub} delta={dl} href={typeof to === "string" ? to : undefined} onPick={typeof to === "function" ? to : undefined} />)}
     </div>
   );
 }

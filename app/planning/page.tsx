@@ -37,7 +37,7 @@ export default function Planning() {
       </PageHeader>
       <NewJobCard open={!!card} onClose={() => setCard(null)} sku={card?.sku} qty={card?.qty} />
       <NewRequest open={req} onClose={() => setReq(false)} />
-      <Kpis items={[["Variants to make", String(need.length)], ["Pieces to make", String(need.reduce((a, r) => a + r.need, 0))], ["Fine gold needed", g(Math.round(totalGold))], ["Open job cards", String(s.jcs.filter((j) => j.state !== "Closed").length)]]} />
+      <Kpis items={[["Variants to make", String(need.length), undefined, undefined, () => setTab("mrp")], ["Pieces to make", String(need.reduce((a, r) => a + r.need, 0)), undefined, undefined, () => setTab("mrp")], ["Fine gold needed", g(Math.round(totalGold)), undefined, undefined, () => setTab("requirement")], ["Open job cards", String(s.jcs.filter((j) => j.state !== "Closed").length), undefined, undefined, () => setTab("cards")]]} />
       <Tabs<Tab> tabs={[["mrp", "Demand vs stock"], ["requirement", "Material requirement"], ["allocation", "Vendor allocation"], ["cards", "Job cards"]]} value={tab} onChange={setTab} />
 
       {tab === "mrp" && (
